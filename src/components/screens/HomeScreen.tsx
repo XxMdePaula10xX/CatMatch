@@ -2,14 +2,15 @@ import { useGameStore } from '../../store/gameStore';
 import { Button } from '../ui/Button';
 import { CATS, CAT_TYPES } from '../../data/cats';
 
-/** Title screen: logo, mascot, and the main menu. */
+/** Title screen: logo, mascot, and the main menu (campaign + modes). */
 export function HomeScreen() {
   const goLevelSelect = useGameStore((s) => s.goLevelSelect);
   const goLeaderboard = useGameStore((s) => s.goLeaderboard);
-  const startLevel = useGameStore((s) => s.startLevel);
+  const goAchievements = useGameStore((s) => s.goAchievements);
+  const startDaily = useGameStore((s) => s.startDaily);
+  const startBlitz = useGameStore((s) => s.startBlitz);
   const resumeGame = useGameStore((s) => s.resumeGame);
   const savedGameExists = useGameStore((s) => s.savedGameExists);
-  const unlocked = useGameStore((s) => s.unlockedLevel);
   const soundEnabled = useGameStore((s) => s.soundEnabled);
   const toggleSound = useGameStore((s) => s.toggleSound);
 
@@ -53,27 +54,29 @@ export function HomeScreen() {
         <Button
           variant={savedGameExists ? 'blue' : 'green'}
           block
-          onClick={() => startLevel(Math.min(unlocked, 5))}
+          onClick={goLevelSelect}
         >
-          {savedGameExists ? '🎮 Nova partida' : '▶ Jogar'}
+          🐾 Jogar (Fases)
         </Button>
         <div className="row">
-          <Button variant="blue" block onClick={goLevelSelect}>
-            🐾 Fases
+          <Button variant="pink" block onClick={startDaily}>
+            📅 Diário
           </Button>
-          <Button variant="purple" block onClick={goLeaderboard}>
+          <Button variant="purple" block onClick={startBlitz}>
+            ⚡ Relâmpago
+          </Button>
+        </div>
+        <div className="row">
+          <Button variant="blue" block onClick={goLeaderboard}>
             🏆 Ranking
+          </Button>
+          <Button variant="ghost" block onClick={goAchievements}>
+            🏅 Conquistas
           </Button>
         </div>
         <Button variant="ghost" block small onClick={toggleSound}>
           {soundEnabled ? '🔊 Som ligado' : '🔇 Som desligado'}
         </Button>
-      </div>
-
-      <div className="chips">
-        <span className="chip">🧶 Novelo de Lã</span>
-        <span className="chip">👑 Gato Chefe</span>
-        <span className="chip">⭐ Poderes</span>
       </div>
     </div>
   );

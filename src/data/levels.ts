@@ -89,3 +89,40 @@ export const levels: Level[] = [
 export function getLevel(id: number): Level | undefined {
   return levels.find((l) => l.id === id);
 }
+
+import type { CatType } from '../game/types';
+
+/** All basic cats, used by the score-attack modes. */
+export const ALL_CATS: CatType[] = [
+  'orange',
+  'gray',
+  'white',
+  'black',
+  'siamese',
+  'tabby',
+];
+
+export const DAILY_LEVEL_ID = 1000;
+export const BLITZ_LEVEL_ID = 1001;
+/** Blitz countdown length. */
+export const BLITZ_DURATION_MS = 60_000;
+
+/** Synthetic level for the Daily Challenge (seeded board, fixed moves). */
+export function makeDailyLevel(dayId: string): Level {
+  return {
+    id: DAILY_LEVEL_ID,
+    name: `Desafio ${dayId}`,
+    moves: 30,
+    objectives: [],
+    boardConfig: { rows: 8, cols: 8, availableCats: ALL_CATS },
+  };
+}
+
+/** Synthetic level for Blitz (60s, no move limit). */
+export const BLITZ_LEVEL: Level = {
+  id: BLITZ_LEVEL_ID,
+  name: 'Relâmpago',
+  moves: 9999,
+  objectives: [],
+  boardConfig: { rows: 8, cols: 8, availableCats: ALL_CATS },
+};

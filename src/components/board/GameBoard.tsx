@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Tile } from './Tile';
+import { Particles } from './Particles';
 import type { Position } from '../../game/types';
 
 interface DragStart {
@@ -19,6 +20,7 @@ export function GameBoard() {
   const floaters = useGameStore((s) => s.floatingScores);
   const toasts = useGameStore((s) => s.toasts);
   const comboLevel = useGameStore((s) => s.comboLevel);
+  const shakeLevel = useGameStore((s) => s.shakeLevel);
   const onTileClick = useGameStore((s) => s.onTileClick);
   const onTileDrag = useGameStore((s) => s.onTileDrag);
 
@@ -76,7 +78,7 @@ export function GameBoard() {
     !!hintCells?.some((h) => h.row === r && h.col === c);
 
   return (
-    <div className="board-wrap">
+    <div className={`board-wrap ${shakeLevel >= 3 ? 'shake' : ''}`}>
       <div
         className="board"
         ref={boardRef}
@@ -125,6 +127,8 @@ export function GameBoard() {
             +{f.value}
           </div>
         ))}
+
+        <Particles rows={rows} cols={cols} />
 
         {comboLevel >= 2 && (
           <div className="combo-banner">Combo x{comboLevel}! 🐾</div>

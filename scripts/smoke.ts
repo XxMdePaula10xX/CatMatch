@@ -76,4 +76,15 @@ for (let i = 0; i < 200 && boxesBroken < 1; i++) {
 }
 assert(boxesBroken >= 1, `box obstacles can be broken (${boxesBroken})`);
 
+// 4. Daily Challenge determinism: same seed → identical starting board.
+import { mulberry32, hashString } from '../src/game/random';
+const cfg = { rows: 8, cols: 8, availableCats: boxLevel.boardConfig.availableCats };
+const seed = hashString('catmatch-2026-06-20');
+const b1 = createBoard(cfg, mulberry32(seed));
+const b2 = createBoard(cfg, mulberry32(seed));
+const sig = (b: Board) => b.flat().map((t) => `${t.type}:${t.catType ?? ''}`).join('|');
+assert(sig(b1) === sig(b2), 'daily seeded board is deterministic');
+const b3 = createBoard(cfg, mulberry32(seed + 1));
+assert(sig(b1) !== sig(b3), 'different seed → different board');
+
 console.log('\nAll smoke tests passed ✅');

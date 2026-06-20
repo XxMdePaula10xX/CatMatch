@@ -1,6 +1,14 @@
 import type { Board, BoardConfig, CatType, Tile } from './types';
-import { nextId, randomItem } from './utils';
+import { nextId } from './utils';
 import { findMatches } from './matchDetector';
+
+/** Random source: defaults to Math.random, but the Daily Challenge passes a
+ *  seeded PRNG so the starting board is identical for everyone. */
+export type Rng = () => number;
+
+function pick<T>(arr: readonly T[], rand: Rng): T {
+  return arr[Math.floor(rand() * arr.length)];
+}
 
 function makeCatTile(
   row: number,
@@ -29,6 +37,7 @@ function pickNonMatchingCat(
   row: number,
   col: number,
   cats: CatType[],
+  rand: Rng,
 ): CatType {
   const options = cats.filter((cat) => {
     // Avoid two of the same to the left.
@@ -57,7 +66,7 @@ function pickNonMatchingCat(
     }
     return true;
   });
-  return randomItem(options.length > 0 ? options : cats);
+  return pick(options.length > 0 ? options : cats, rand);
 }
 
 /**
@@ -65,7 +74,7 @@ function pickNonMatchingCat(
  * yarn balls are placed first, then remaining cells are filled with cats
  * that produce no starting matches.
  */
-export function createBoard(config: BoardConfig): Board {
+export function createBoard(config: BoardConfig, rand: Rng = Math.random): Board {
   const { rows, cols, availableCats } = config;
   const board: Board = [];
 
@@ -107,7 +116,7 @@ export function createBoard(config: BoardConfig): Board {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (board[r][c].type === 'empty') {
-        const cat = pickNonMatchingCat(board, r, c, availableCats);
+        const cat = pickNonMatchingCat(board, r, c, availableCats, rand);
         board[r][c] = makeCatTile(r, c, cat);
       }
     }
@@ -122,7 +131,7 @@ export function createBoard(config: BoardConfig): Board {
         board[row][col] = makeCatTile(
           row,
           col,
-          pickNonMatchingCat(board, row, col, availableCats),
+          pickNonMatchingCat(board, row, col, availableCats, rand),
         );
       }
     }

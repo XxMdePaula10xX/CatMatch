@@ -3,6 +3,7 @@ import { computeStars } from '../../game/objectives';
 import { getLevel } from '../../data/levels';
 import { formatTime } from './TimerCounter';
 import { Modal, Stars } from './Modal';
+import { Confetti } from './Confetti';
 import { Button } from './Button';
 
 /** Shown when the player clears the level objective. */
@@ -29,6 +30,7 @@ export function VictoryModal() {
 
   return (
     <Modal variant="win">
+      <Confetti />
       <span className="modal__cat" aria-hidden>
         😸
       </span>

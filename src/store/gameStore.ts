@@ -4,15 +4,23 @@ import type {
   BossState,
   CatType,
   FloatingScore,
+  GameMode,
   GameStatus,
   Level,
   Objective,
   Position,
   Screen,
 } from '../game/types';
-import { levels, getLevel } from '../data/levels';
-import { createBoard, makeEmptyTile } from '../game/boardGenerator';
+import {
+  levels,
+  getLevel,
+  makeDailyLevel,
+  BLITZ_LEVEL,
+  BLITZ_DURATION_MS,
+} from '../data/levels';
+import { createBoard, makeEmptyTile, type Rng } from '../game/boardGenerator';
 import { cloneBoard, delay, forEachTile, inBounds } from '../game/utils';
+import { mulberry32, hashString } from '../game/random';
 import { findMatches } from '../game/matchDetector';
 import { swapTiles, findHint } from '../game/swapLogic';
 import { resolveMatchStep } from '../game/cascadeResolver';
@@ -41,8 +49,19 @@ import {
   authAvailable,
   type AppUser,
 } from '../services/auth';
+import {
+  loadCloudSave,
+  saveCloudSave,
+  mergeCloud,
+  type CloudData,
+} from '../services/cloudSave';
+import {
+  type Stats,
+  unlockedIds,
+  ACHIEVEMENTS,
+} from '../data/achievements';
+import { getDayId } from '../services/periods';
 
-// Animation timings (ms).
 const T = { swap: 180, pop: 240, fall: 240, boss: 600 };
 const BOOSTER_START = 3;
 
@@ -50,9 +69,21 @@ export interface Toast {
   id: string;
   text: string;
 }
+export interface Particle {
+  id: string;
+  row: number;
+  col: number;
+}
+
+interface BeginOpts {
+  mode?: GameMode;
+  saved?: storage.SavedGame;
+  rng?: Rng;
+}
 
 interface GameState {
   screen: Screen;
+  mode: GameMode;
   level: Level | null;
   board: Board;
   movesLeft: number;
@@ -72,6 +103,8 @@ interface GameState {
   hintCells: Position[] | null;
   floatingScores: FloatingScore[];
   toasts: Toast[];
+  particles: Particle[];
+  shakeLevel: number;
   comboLevel: number;
 
   activeBooster: BoosterId | null;
@@ -85,15 +118,22 @@ interface GameState {
   savedGameExists: boolean;
   nickname: string;
   soundEnabled: boolean;
+
   user: AppUser | null;
   authReady: boolean;
   authAvailable: boolean;
+
+  stats: Stats;
+  achievements: string[];
 
   // ----- actions -----
   goHome: () => void;
   goLevelSelect: () => void;
   goLeaderboard: () => void;
+  goAchievements: () => void;
   startLevel: (id: number) => void;
+  startDaily: () => void;
+  startBlitz: () => void;
   restartLevel: () => void;
   nextLevel: () => void;
   resumeGame: () => void;
@@ -110,6 +150,7 @@ interface GameState {
 
 let floatId = 0;
 let toastId = 0;
+let particleId = 0;
 
 function recomputeObjectives(
   level: Level,
@@ -149,8 +190,31 @@ export const useGameStore = create<GameState>((set, get) => {
     set((s) => ({ toasts: [...s.toasts, t] }));
     setTimeout(
       () => set((s) => ({ toasts: s.toasts.filter((x) => x.id !== t.id) })),
-      1600,
+      1700,
     );
+  }
+
+  function addParticles(cells: Position[]) {
+    const items = cells.slice(0, 5).map((c) => {
+      particleId += 1;
+      return { id: `p${particleId}`, row: c.row, col: c.col };
+    });
+    if (items.length === 0) return;
+    set((s) => ({ particles: [...s.particles, ...items] }));
+    setTimeout(
+      () =>
+        set((s) => ({
+          particles: s.particles.filter(
+            (p) => !items.some((i) => i.id === p.id),
+          ),
+        })),
+      600,
+    );
+  }
+
+  function triggerShake(level: number) {
+    set({ shakeLevel: level });
+    setTimeout(() => set({ shakeLevel: 0 }), 450);
   }
 
   function mergeCollected(
@@ -162,6 +226,43 @@ export const useGameStore = create<GameState>((set, get) => {
       progress.catsCollected[key] =
         (progress.catsCollected[key] ?? 0) + (n ?? 0);
     }
+  }
+
+  // ---- stats + achievements ----
+  function checkAchievements(stats: Stats) {
+    const current = new Set(get().achievements);
+    const all = unlockedIds(stats);
+    const newly = all.filter((id) => !current.has(id));
+    if (newly.length) {
+      const updated = [...current, ...newly];
+      storage.saveAchievements(updated);
+      set({ achievements: updated });
+      for (const id of newly) {
+        const def = ACHIEVEMENTS.find((a) => a.id === id);
+        if (def) addToast(`🏅 Conquista: ${def.name}`);
+      }
+    }
+  }
+
+  function updateStats(mut: (s: Stats) => void) {
+    const stats = { ...get().stats };
+    mut(stats);
+    storage.saveStats(stats);
+    set({ stats });
+    checkAchievements(stats);
+  }
+
+  function cloudPush() {
+    const s = get();
+    if (!s.user) return;
+    const data: CloudData = {
+      unlockedLevel: s.unlockedLevel,
+      stars: s.starsByLevel,
+      highScores: s.highScores,
+      stats: s.stats,
+      achievements: s.achievements,
+    };
+    void saveCloudSave(s.user.uid, data);
   }
 
   function snapshot(board: Board): storage.SavedGame {
@@ -184,6 +285,7 @@ export const useGameStore = create<GameState>((set, get) => {
     set({ bossState: 'waking' });
     soundManager.play('boss');
     addToast('👑 Gato Chefe: Espreguiçada Real!');
+    triggerShake(4);
     await delay(T.boss);
 
     const cat = (() => {
@@ -211,6 +313,10 @@ export const useGameStore = create<GameState>((set, get) => {
     progress.score += SCORE.bossPower;
     progress.boxesBroken += res.boxesBroken;
     progress.bossCharged += 1;
+    updateStats((st) => {
+      st.bossCharges += 1;
+      st.boxesBroken += res.boxesBroken;
+    });
     set({ score: progress.score });
     await commit(board, T.pop);
 
@@ -241,6 +347,8 @@ export const useGameStore = create<GameState>((set, get) => {
       cascadeLevel += 1;
       set({ comboLevel: cascadeLevel });
       soundManager.play(cascadeLevel > 1 ? 'combo' : 'match');
+      addParticles(matches.matchedPositions);
+      if (cascadeLevel >= 3) triggerShake(cascadeLevel);
 
       for (const p of matches.matchedPositions) board[p.row][p.col].isMatched = true;
       await commit(board, T.pop);
@@ -260,6 +368,12 @@ export const useGameStore = create<GameState>((set, get) => {
       progress.yarnsActivated += step.yarnsActivated;
       mergeCollected(progress, step.catsCollected);
       bossEnergy += step.bossEnergyGained;
+
+      updateStats((st) => {
+        st.boxesBroken += step.boxesBroken;
+        st.yarns += step.yarnsActivated;
+        st.maxCombo = Math.max(st.maxCombo, cascadeLevel);
+      });
 
       addFloating(step.scoreGained, matches.matchedPositions[0]);
       set({
@@ -300,19 +414,60 @@ export const useGameStore = create<GameState>((set, get) => {
       const catTiles = board.flat().filter((t) => t.type === 'cat');
       for (const t of catTiles)
         t.catType = cats[Math.floor(Math.random() * cats.length)];
-      if (
-        findMatches(board).matchedPositions.length === 0 &&
-        findHint(board)
-      )
+      if (findMatches(board).matchedPositions.length === 0 && findHint(board))
         break;
       guard += 1;
     }
+  }
+
+  /** Ends a score-attack run (daily / blitz) and submits the score. */
+  function endScoreMode() {
+    const s = get();
+    if (s.status !== 'playing') return;
+    const progress = s.progress;
+    updateStats((st) => {
+      st.bestScore = Math.max(st.bestScore, progress.score);
+    });
+    const board = s.mode === 'daily' ? 'daily' : 'blitz';
+    const scope = s.mode === 'daily' ? 'daily' : 'weekly';
+    const highScores = storage.saveHighScore(s.level!.id, progress.score);
+    void submitScore({
+      uid: s.user?.uid,
+      name: s.nickname || s.user?.name || 'Jogador',
+      score: progress.score,
+      board,
+      scope,
+    });
+    soundManager.play('victory');
+    set({
+      status: 'finished',
+      isResolving: false,
+      lastHighScore: progress.score,
+      highScores,
+    });
+    cloudPush();
   }
 
   function finishMove(board: Board) {
     const state = get();
     const level = state.level!;
     const progress = state.progress;
+
+    // Score-attack modes have no objectives — they end by moves/time.
+    if (state.mode !== 'normal') {
+      if (state.mode === 'daily' && state.movesLeft <= 0) {
+        endScoreMode();
+        return;
+      }
+      if (state.mode === 'blitz' && state.elapsedMs >= BLITZ_DURATION_MS) {
+        endScoreMode();
+        return;
+      }
+      ensureSolvable(board, level.boardConfig.availableCats);
+      set({ board: cloneBoard(board), score: progress.score, isResolving: false });
+      return;
+    }
+
     const objectives = recomputeObjectives(level, progress);
     const won = checkWinCondition(level.objectives, progress);
     const movesLeft = state.movesLeft;
@@ -328,11 +483,21 @@ export const useGameStore = create<GameState>((set, get) => {
       const unlocked = Math.max(state.unlockedLevel, level.id + 1);
       storage.saveMeta({ unlockedLevel: unlocked, stars: newStars });
       storage.clearSavedGame();
+      updateStats((st) => {
+        st.wins += 1;
+        st.bestScore = Math.max(st.bestScore, progress.score);
+        if (state.elapsedMs < 60000) st.fastWins += 1;
+        st.levelsCompleted = Math.max(
+          st.levelsCompleted,
+          Object.keys(newStars).length,
+        );
+      });
       void submitScore({
+        uid: state.user?.uid,
         name: state.nickname || state.user?.name || 'Jogador',
         score: high,
-        level: level.id,
-        uid: state.user?.uid,
+        board: `lvl${level.id}`,
+        scope: 'weekly',
       });
       soundManager.play('victory');
       set({
@@ -346,6 +511,7 @@ export const useGameStore = create<GameState>((set, get) => {
         savedGameExists: false,
         isResolving: false,
       });
+      cloudPush();
       return;
     }
 
@@ -378,7 +544,7 @@ export const useGameStore = create<GameState>((set, get) => {
       return;
     }
 
-    set({ movesLeft: get().movesLeft - 1 });
+    if (get().mode !== 'blitz') set({ movesLeft: get().movesLeft - 1 });
     await resolveCascades(board);
     finishMove(board);
   }
@@ -410,6 +576,7 @@ export const useGameStore = create<GameState>((set, get) => {
     }
 
     applyObstacleDamage(board, targets);
+    addParticles(targets);
     for (const p of targets) {
       const t = board[p.row][p.col];
       if (t.type === 'cat' || t.type === 'specialCat') t.isMatched = true;
@@ -436,51 +603,87 @@ export const useGameStore = create<GameState>((set, get) => {
     finishMove(board);
   }
 
-  function beginLevel(level: Level, init?: storage.SavedGame) {
-    const progress = init ? init.progress : createProgress();
+  function beginLevel(level: Level, opts: BeginOpts = {}) {
+    const mode = opts.mode ?? 'normal';
+    const saved = opts.saved;
+    const progress = saved ? saved.progress : createProgress();
     set({
       screen: 'game',
+      mode,
       level,
-      board: init ? init.board : createBoard(level.boardConfig),
-      movesLeft: init ? init.movesLeft : level.moves,
-      totalMoves: init ? init.totalMoves : level.moves,
-      score: init ? init.score : 0,
+      board: saved ? saved.board : createBoard(level.boardConfig, opts.rng),
+      movesLeft: saved ? saved.movesLeft : level.moves,
+      totalMoves: saved ? saved.totalMoves : level.moves,
+      score: saved ? saved.score : 0,
       progress,
       objectives: recomputeObjectives(level, progress),
       status: 'playing',
       isResolving: false,
-      elapsedMs: init ? init.elapsedMs : 0,
-      bossActive: init ? init.bossActive : !!level.boardConfig.bossCat,
-      bossEnergy: init ? init.bossEnergy : 0,
+      elapsedMs: saved ? saved.elapsedMs : 0,
+      bossActive: saved ? saved.bossActive : !!level.boardConfig.bossCat,
+      bossEnergy: saved ? saved.bossEnergy : 0,
       bossState: 'sleeping',
       selected: null,
       hintCells: null,
       floatingScores: [],
       toasts: [],
+      particles: [],
+      shakeLevel: 0,
       comboLevel: 0,
       activeBooster: null,
-      boosterUses: init
-        ? init.boosterUses
+      boosterUses: saved
+        ? saved.boosterUses
         : { pawBomb: BOOSTER_START, laser: BOOSTER_START },
     });
-    if (init) set({ savedGameExists: true });
+    if (saved) set({ savedGameExists: true });
   }
 
-  // Subscribe to auth changes (deferred so `set` is ready). In guest mode
-  // (no Firebase) this fires once with null and marks auth as ready.
+  // Subscribe to auth changes (deferred so `set` is ready). On login, merge
+  // the cloud save with local progress and push the union back up.
   setTimeout(() => {
-    onAuthChange((user) => {
+    onAuthChange(async (user) => {
+      if (!user) {
+        set({ user: null, authReady: true });
+        return;
+      }
       const patch: Partial<GameState> = { user, authReady: true };
-      if (user && !get().nickname) {
+      if (!get().nickname) {
         storage.saveNickname(user.name);
         patch.nickname = user.name;
       }
       set(patch);
+
+      const s = get();
+      const local: CloudData = {
+        unlockedLevel: s.unlockedLevel,
+        stars: s.starsByLevel,
+        highScores: s.highScores,
+        stats: s.stats,
+        achievements: s.achievements,
+      };
+      const cloud = await loadCloudSave(user.uid);
+      const merged = cloud ? mergeCloud(local, cloud) : local;
+      storage.saveMeta({
+        unlockedLevel: merged.unlockedLevel,
+        stars: merged.stars,
+      });
+      storage.saveHighScores(merged.highScores);
+      storage.saveStats(merged.stats);
+      storage.saveAchievements(merged.achievements);
+      set({
+        unlockedLevel: merged.unlockedLevel,
+        starsByLevel: merged.stars,
+        highScores: merged.highScores,
+        stats: merged.stats,
+        achievements: merged.achievements,
+      });
+      void saveCloudSave(user.uid, merged);
     });
   }, 0);
 
   return {
     screen: 'home',
+    mode: 'normal',
     level: null,
     board: [],
     movesLeft: 0,
@@ -500,6 +703,8 @@ export const useGameStore = create<GameState>((set, get) => {
     hintCells: null,
     floatingScores: [],
     toasts: [],
+    particles: [],
+    shakeLevel: 0,
     comboLevel: 0,
 
     activeBooster: null,
@@ -513,9 +718,13 @@ export const useGameStore = create<GameState>((set, get) => {
     savedGameExists: storage.loadSavedGame() !== null,
     nickname: storage.loadNickname(),
     soundEnabled: true,
+
     user: null,
     authReady: !authAvailable,
     authAvailable,
+
+    stats: storage.loadStats(),
+    achievements: storage.loadAchievements(),
 
     goHome: () => {
       soundManager.play('button');
@@ -529,6 +738,10 @@ export const useGameStore = create<GameState>((set, get) => {
       soundManager.play('button');
       set({ screen: 'leaderboard' });
     },
+    goAchievements: () => {
+      soundManager.play('button');
+      set({ screen: 'achievements' });
+    },
 
     startLevel: (id: number) => {
       const level = getLevel(id);
@@ -537,17 +750,34 @@ export const useGameStore = create<GameState>((set, get) => {
       beginLevel(level);
     },
 
+    startDaily: () => {
+      const dayId = getDayId();
+      soundManager.play('button');
+      beginLevel(makeDailyLevel(dayId), {
+        mode: 'daily',
+        rng: mulberry32(hashString(`catmatch-${dayId}`)),
+      });
+    },
+
+    startBlitz: () => {
+      soundManager.play('button');
+      beginLevel(BLITZ_LEVEL, { mode: 'blitz' });
+    },
+
     resumeGame: () => {
       const saved = storage.loadSavedGame();
       if (!saved) return;
       const level = getLevel(saved.levelId);
       if (!level) return;
       soundManager.play('button');
-      beginLevel(level, saved);
+      beginLevel(level, { saved });
     },
 
     restartLevel: () => {
-      const id = get().level?.id;
+      const s = get();
+      if (s.mode === 'daily') return s.startDaily();
+      if (s.mode === 'blitz') return s.startBlitz();
+      const id = s.level?.id;
       if (id) beginLevel(getLevel(id)!);
     },
 
@@ -622,12 +852,17 @@ export const useGameStore = create<GameState>((set, get) => {
       const clean = name.slice(0, 18);
       storage.saveNickname(clean);
       set({ nickname: clean });
+      cloudPush();
     },
 
     tick: () => {
       const s = get();
-      if (s.screen === 'game' && s.status === 'playing')
-        set({ elapsedMs: s.elapsedMs + 1000 });
+      if (s.screen !== 'game' || s.status !== 'playing') return;
+      const next = s.elapsedMs + 1000;
+      set({ elapsedMs: next });
+      if (s.mode === 'blitz' && next >= BLITZ_DURATION_MS && !s.isResolving) {
+        endScoreMode();
+      }
     },
 
     signInGoogle: async () => {

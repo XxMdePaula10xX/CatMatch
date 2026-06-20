@@ -3,6 +3,7 @@ import { HomeScreen } from './components/screens/HomeScreen';
 import { LevelSelectScreen } from './components/screens/LevelSelectScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
+import { AchievementsScreen } from './components/screens/AchievementsScreen';
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
@@ -14,6 +15,7 @@ export default function App() {
       {screen === 'levelSelect' && <LevelSelectScreen />}
       {screen === 'game' && <GameScreen />}
       {screen === 'leaderboard' && <LeaderboardScreen />}
+      {screen === 'achievements' && <AchievementsScreen />}
     </div>
   );
 }

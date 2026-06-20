@@ -1,5 +1,6 @@
 import type { Board } from '../game/types';
 import type { ObjectiveProgress } from '../game/objectives';
+import { type Stats, createStats } from '../data/achievements';
 
 /** A full in-progress game snapshot, so a level can be resumed after leaving. */
 export interface SavedGame {
@@ -25,6 +26,8 @@ const KEYS = {
   highScores: 'catmatch.highscores',
   savedGame: 'catmatch.savedgame',
   nickname: 'catmatch.nickname',
+  stats: 'catmatch.stats',
+  achievements: 'catmatch.achievements',
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -72,6 +75,9 @@ export function saveHighScore(level: number, score: number): Record<number, numb
   }
   return scores;
 }
+export function saveHighScores(scores: Record<number, number>): void {
+  write(KEYS.highScores, scores);
+}
 
 // ---- Saved (resumable) game ----
 export function loadSavedGame(): SavedGame | null {
@@ -90,4 +96,18 @@ export function loadNickname(): string {
 }
 export function saveNickname(name: string): void {
   write(KEYS.nickname, name);
+}
+
+// ---- Cumulative stats + unlocked achievements ----
+export function loadStats(): Stats {
+  return { ...createStats(), ...read<Partial<Stats>>(KEYS.stats, {}) };
+}
+export function saveStats(stats: Stats): void {
+  write(KEYS.stats, stats);
+}
+export function loadAchievements(): string[] {
+  return read<string[]>(KEYS.achievements, []);
+}
+export function saveAchievements(ids: string[]): void {
+  write(KEYS.achievements, ids);
 }

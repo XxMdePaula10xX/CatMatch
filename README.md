@@ -76,14 +76,24 @@ snapshots so CSS transitions animate swaps, pops, and falls.
 
 ## ✨ Recursos de jogo
 
+- **Modos de jogo:**
+  - 🐾 **Fases** — campanha de 5 níveis com objetivos.
+  - 📅 **Desafio Diário** — tabuleiro idêntico para todos no mesmo dia (semente
+    fixa), com **ranking do dia**.
+  - ⚡ **Relâmpago** — 60 segundos para pontuar o máximo (ranking semanal).
 - **Toque ou arraste** um gatinho na direção desejada para trocar peças.
-- **Cronômetro** por fase: quanto mais rápido, maior o multiplicador aplicado
-  ao **High Score** (×3 até 60s, ×2 até 120s, ×1.5 até 180s).
-- **Guia de poderes** (botão ❓) explicando cada gato, especial e obstáculo;
-  além de avisos na tela quando um poder é ativado.
-- **Salvar & retomar:** a partida em andamento é salva automaticamente; a tela
-  inicial mostra **Continuar**. Recordes e progresso ficam no `localStorage`.
-- **Ranking (leaderboard):** compare sua pontuação com outros jogadores.
+- **Juice:** squash & stretch nas peças, partículas ao explodir, *screen shake*
+  em combos grandes e confete na vitória.
+- **Cronômetro** por fase: quanto mais rápido, maior o multiplicador do
+  **High Score** (×3 até 60s, ×2 até 120s, ×1.5 até 180s).
+- **Conquistas** 🏅 — 8 objetivos de longo prazo (primeiro combo x5, quebrar
+  100 caixas, etc.) com tela de progresso.
+- **Guia de poderes** (botão ❓) explicando cada gato, especial e obstáculo.
+- **Salvar & retomar:** a partida em andamento é salva automaticamente.
+- **Ranking semanal + diário:** o ranking **zera toda semana** (temporadas) e o
+  Diário é por dia. Sua posição aparece fixada mesmo fora do top 25.
+- **Cloud Save:** logado, o progresso (fases, estrelas, recordes, conquistas)
+  sincroniza entre aparelhos.
 
 ## 🖼️ Arte dos gatos (PNGs)
 
@@ -109,9 +119,33 @@ Para ativar online:
 6. Copie `.env.example` para `.env`, preencha as chaves `VITE_FIREBASE_*` e rode
    `npm run dev` de novo.
 
-> Regra do Firestore sugerida: leitura pública da coleção `scores`, escrita
-> apenas por usuários autenticados (`request.auth != null`). Configure no
-> console antes de publicar.
+### Regras do Firestore (cole na aba "Rules")
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Ranking: qualquer um lê; só o dono escreve a própria pontuação.
+    match /scores/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.data.uid == request.auth.uid;
+    }
+    // Cloud save: cada usuário só acessa o próprio documento.
+    match /saves/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+```
+
+### Índices compostos
+
+As consultas do ranking por board/semana usam índices compostos. Na primeira
+vez que você filtrar por fase (F1–F5) ou abrir o Diário/Relâmpago, o Firestore
+mostra um **erro com um link** — basta clicar nele para criar o índice em 1
+clique. Campos usados: `board` + `periodId` + `score`, e `periodId` + `scope` +
+`score` (para o "Geral").
 
 ## 🚀 After the MVP
 

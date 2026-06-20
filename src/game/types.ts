@@ -90,9 +90,18 @@ export interface Level {
 
 // ---- Game flow ----
 
-export type Screen = 'home' | 'levelSelect' | 'game' | 'leaderboard';
+export type Screen =
+  | 'home'
+  | 'levelSelect'
+  | 'game'
+  | 'leaderboard'
+  | 'achievements';
 
-export type GameStatus = 'playing' | 'won' | 'lost';
+export type GameStatus = 'playing' | 'won' | 'lost' | 'finished';
+
+/** Play modes. `normal` is the level campaign; `daily` and `blitz` are
+ *  score-attack modes. */
+export type GameMode = 'normal' | 'daily' | 'blitz';
 
 export type BossState =
   | 'sleeping'
