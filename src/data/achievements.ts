@@ -94,12 +94,20 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     progress: (s) => clamp01(s.bestScore / 10000),
   },
   {
+    id: 'levels10',
+    name: 'Pegando o Jeito',
+    description: 'Conclua 10 fases.',
+    icon: '🐈',
+    done: (s) => s.levelsCompleted >= 10,
+    progress: (s) => clamp01(s.levelsCompleted / 10),
+  },
+  {
     id: 'allLevels',
     name: 'Casa Cheia',
-    description: 'Conclua todas as 5 fases.',
+    description: 'Conclua 30 fases.',
     icon: '🏆',
-    done: (s) => s.levelsCompleted >= 5,
-    progress: (s) => clamp01(s.levelsCompleted / 5),
+    done: (s) => s.levelsCompleted >= 30,
+    progress: (s) => clamp01(s.levelsCompleted / 30),
   },
 ];
 

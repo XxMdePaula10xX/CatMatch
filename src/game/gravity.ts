@@ -95,12 +95,14 @@ export function refillBoard(board: Board, availableCats: CatType[]): void {
   }
 }
 
-/** Clears the transient falling/new animation flags. */
+/** Clears the transient animation flags after a cascade step settles. */
 export function clearFallFlags(board: Board): void {
   for (const row of board) {
     for (const tile of row) {
       tile.isFalling = false;
       tile.isNew = false;
+      tile.isMatched = false;
+      tile.isActivating = false;
     }
   }
 }

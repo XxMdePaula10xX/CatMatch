@@ -10,10 +10,6 @@ export interface ObstacleDamageResult {
   obstaclesDestroyed: number;
 }
 
-function key(p: Position): string {
-  return `${p.row},${p.col}`;
-}
-
 /**
  * Damages obstacles adjacent to matched cells (plus any extra damage points
  * from cat powers). Removable obstacles whose hp reaches 0 are cleared.
@@ -59,13 +55,4 @@ export function applyObstacleDamage(
   }
 
   return { boxesBroken, obstaclesDestroyed };
-}
-
-/** Reduces hp of obstacles adjacent to a single cell (used by Boss power). */
-export function damageObstaclesAround(
-  board: Board,
-  cells: Position[],
-): { boxesBroken: number; obstaclesDestroyed: number } {
-  const positions = cells.filter((c) => key(c).length > 0);
-  return applyObstacleDamage(board, positions);
 }

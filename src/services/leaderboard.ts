@@ -190,20 +190,21 @@ export async function getPlayerRank(
 
   if (firebaseEnabled) {
     const db = getDb();
-    if (db && params.board) {
-      try {
-        const base = collection(db, COLLECTION);
-        const q = query(
-          base,
-          where('board', '==', params.board),
-          where('periodId', '==', periodId),
-          where('score', '>', myScore),
-        );
-        const snap = await getCountFromServer(q);
-        return snap.data().count + 1;
-      } catch {
-        return null;
-      }
+    // Exact rank needs a single board to count; "Geral" (no board) can't be
+    // ranked cheaply, so we skip the pinned row there.
+    if (!db || !params.board) return null;
+    try {
+      const base = collection(db, COLLECTION);
+      const q = query(
+        base,
+        where('board', '==', params.board),
+        where('periodId', '==', periodId),
+        where('score', '>', myScore),
+      );
+      const snap = await getCountFromServer(q);
+      return snap.data().count + 1;
+    } catch {
+      return null;
     }
   }
 

@@ -1,5 +1,4 @@
 import { useGameStore } from '../../store/gameStore';
-import { DAILY_LEVEL_ID, BLITZ_LEVEL_ID } from '../../data/levels';
 import { Modal } from './Modal';
 import { Confetti } from './Confetti';
 import { Button } from './Button';
@@ -8,14 +7,12 @@ import { Button } from './Button';
 export function ResultsModal() {
   const mode = useGameStore((s) => s.mode);
   const score = useGameStore((s) => s.score);
-  const highScores = useGameStore((s) => s.highScores);
+  const isRecord = useGameStore((s) => s.lastIsRecord);
   const restartLevel = useGameStore((s) => s.restartLevel);
   const goLeaderboard = useGameStore((s) => s.goLeaderboard);
   const goHome = useGameStore((s) => s.goHome);
 
   const isDaily = mode === 'daily';
-  const best = highScores[isDaily ? DAILY_LEVEL_ID : BLITZ_LEVEL_ID] ?? 0;
-  const isRecord = score >= best;
 
   return (
     <Modal variant="win">

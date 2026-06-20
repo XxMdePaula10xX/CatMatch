@@ -15,7 +15,7 @@ export function VictoryModal() {
   const levelId = useGameStore((s) => s.level?.id ?? 0);
   const highScore = useGameStore((s) => s.lastHighScore);
   const timeMult = useGameStore((s) => s.lastTimeMultiplier);
-  const bestHigh = useGameStore((s) => s.highScores[levelId] ?? 0);
+  const isRecord = useGameStore((s) => s.lastIsRecord);
   const nextLevel = useGameStore((s) => s.nextLevel);
   const restartLevel = useGameStore((s) => s.restartLevel);
   const goLevelSelect = useGameStore((s) => s.goLevelSelect);
@@ -25,7 +25,6 @@ export function VictoryModal() {
 
   const stars = computeStars(movesLeft, totalMoves);
   const hasNext = !!getLevel(levelId + 1);
-  const isRecord = highScore >= bestHigh;
   const promptLogin = authAvailable && !user;
 
   return (

@@ -1,6 +1,7 @@
 import type { Board, CatType, Position, Tile } from './types';
 import { inBounds, randomItem } from './utils';
 import { CAT_TYPES } from '../data/cats';
+import { applyObstacleDamage } from './obstacleLogic';
 
 function key(p: Position): string {
   return `${p.row},${p.col}`;
@@ -89,15 +90,16 @@ export function applySpecialActivations(
         break;
       }
       case 'lucky': {
-        // Priority: obstacle -> random cat.
-        let handled = false;
-        for (const row of board) {
-          for (const t of row) {
-            if (t.type === 'obstacle' && !handled) {
-              add([{ row: t.row, col: t.col }]);
-              handled = true;
-            }
-          }
+        // Damages the nearest obstacle if there is one; otherwise clears the
+        // surrounding 3x3 of cats. (Lucky/Sleepy are spawn-only specials.)
+        const obstacle = board
+          .flat()
+          .find((t) => t.type === 'obstacle' && t.obstacleType !== 'bed');
+        if (obstacle) {
+          applyObstacleDamage(board, [pos]);
+          add(areaCells(board, pos, 1));
+        } else {
+          add(areaCells(board, pos, 1));
         }
         break;
       }

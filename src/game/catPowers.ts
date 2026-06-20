@@ -2,6 +2,7 @@ import type { Board, CatType, Position, Tile } from './types';
 import type { MatchGroup } from './matchDetector';
 import { neighbors, randomItem } from './utils';
 import { swapTiles } from './swapLogic';
+import { BOSS_ENERGY } from './scoring';
 
 export interface PersonalityResult {
   /** Extra points from Orange Cat (+20% of the group base). */
@@ -97,7 +98,7 @@ export function applyCatPersonalityEffects(
       }
       case 'siamese': {
         // Charmoso — bônus na barra do Gato Chefe.
-        result.bossBonus += 5;
+        result.bossBonus += BOSS_ENERGY.siameseBonus;
         break;
       }
       case 'tabby': {

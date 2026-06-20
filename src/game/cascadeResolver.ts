@@ -73,9 +73,14 @@ export function resolveMatchStep(
   const specialExtra = applySpecialActivations(board, matchedSet);
   for (const p of specialExtra) matchedSet.add(key(p));
 
+  // Cells where a special cat will be created stay on the board (they aren't
+  // removed), so they must not count toward collect objectives.
+  const creationKeys = new Set(result.creations.map((c) => key(c.pos)));
+
   // 2. Count collected cats (read tiles before they are emptied).
   const catsCollected: Partial<Record<CatType, number>> = {};
   for (const k of matchedSet) {
+    if (creationKeys.has(k)) continue;
     const { row, col } = parse(k);
     const t = board[row][col];
     if ((t.type === 'cat' || t.type === 'specialCat') && t.catType) {

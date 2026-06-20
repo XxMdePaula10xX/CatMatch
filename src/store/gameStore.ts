@@ -115,6 +115,7 @@ interface GameState {
   highScores: Record<number, number>;
   lastHighScore: number;
   lastTimeMultiplier: number;
+  lastIsRecord: boolean;
   savedGameExists: boolean;
   nickname: string;
   soundEnabled: boolean;
@@ -409,13 +410,13 @@ export const useGameStore = create<GameState>((set, get) => {
   }
 
   function ensureSolvable(board: Board, cats: CatType[]) {
+    const needsReshuffle = () =>
+      findMatches(board).matchedPositions.length > 0 || !findHint(board);
     let guard = 0;
-    while (!findHint(board) && guard < 30) {
+    while (needsReshuffle() && guard < 40) {
       const catTiles = board.flat().filter((t) => t.type === 'cat');
       for (const t of catTiles)
         t.catType = cats[Math.floor(Math.random() * cats.length)];
-      if (findMatches(board).matchedPositions.length === 0 && findHint(board))
-        break;
       guard += 1;
     }
   }
@@ -430,6 +431,7 @@ export const useGameStore = create<GameState>((set, get) => {
     });
     const board = s.mode === 'daily' ? 'daily' : 'blitz';
     const scope = s.mode === 'daily' ? 'daily' : 'weekly';
+    const prevBest = s.highScores[s.level!.id] ?? 0;
     const highScores = storage.saveHighScore(s.level!.id, progress.score);
     void submitScore({
       uid: s.user?.uid,
@@ -443,6 +445,7 @@ export const useGameStore = create<GameState>((set, get) => {
       status: 'finished',
       isResolving: false,
       lastHighScore: progress.score,
+      lastIsRecord: progress.score > prevBest,
       highScores,
     });
     cloudPush();
@@ -476,6 +479,7 @@ export const useGameStore = create<GameState>((set, get) => {
     if (won) {
       const tMult = timeMultiplier(state.elapsedMs);
       const high = Math.round(progress.score * tMult);
+      const prevBest = state.highScores[level.id] ?? 0;
       const highScores = storage.saveHighScore(level.id, high);
       const stars = computeStars(movesLeft, state.totalMoves);
       const bestStars = Math.max(state.starsByLevel[level.id] ?? 0, stars);
@@ -508,6 +512,7 @@ export const useGameStore = create<GameState>((set, get) => {
         highScores,
         lastHighScore: high,
         lastTimeMultiplier: tMult,
+        lastIsRecord: high > prevBest,
         savedGameExists: false,
         isResolving: false,
       });
@@ -715,6 +720,7 @@ export const useGameStore = create<GameState>((set, get) => {
     highScores: storage.loadHighScores(),
     lastHighScore: 0,
     lastTimeMultiplier: 1,
+    lastIsRecord: false,
     savedGameExists: storage.loadSavedGame() !== null,
     nickname: storage.loadNickname(),
     soundEnabled: true,
@@ -858,9 +864,12 @@ export const useGameStore = create<GameState>((set, get) => {
     tick: () => {
       const s = get();
       if (s.screen !== 'game' || s.status !== 'playing') return;
+      // Freeze the clock during cascade animations so it stays fair (and the
+      // win-time multiplier isn't eaten by long combos).
+      if (s.isResolving) return;
       const next = s.elapsedMs + 1000;
       set({ elapsedMs: next });
-      if (s.mode === 'blitz' && next >= BLITZ_DURATION_MS && !s.isResolving) {
+      if (s.mode === 'blitz' && next >= BLITZ_DURATION_MS) {
         endScoreMode();
       }
     },
