@@ -42,3 +42,15 @@ export function comboMultiplier(cascadeLevel: number): number {
   if (cascadeLevel === 3) return 2;
   return 3;
 }
+
+/**
+ * High-score time bonus: the faster the level is cleared, the bigger the
+ * multiplier applied to the final score.
+ */
+export function timeMultiplier(elapsedMs: number): number {
+  const s = elapsedMs / 1000;
+  if (s <= 60) return 3;
+  if (s <= 120) return 2;
+  if (s <= 180) return 1.5;
+  return 1;
+}

@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { GameBoard } from '../board/GameBoard';
 import { MovesCounter } from '../ui/MovesCounter';
 import { ScoreCounter } from '../ui/ScoreCounter';
+import { TimerCounter } from '../ui/TimerCounter';
 import { ObjectiveCard } from '../ui/ObjectiveCard';
 import { BossCatMeter } from '../ui/BossCatMeter';
 import { BoosterTray } from '../ui/BoosterButton';
 import { VictoryModal } from '../ui/VictoryModal';
 import { DefeatModal } from '../ui/DefeatModal';
+import { HelpModal } from '../ui/HelpModal';
 import { Button } from '../ui/Button';
 
 /** The main gameplay screen. */
@@ -19,6 +22,8 @@ export function GameScreen() {
   const restartLevel = useGameStore((s) => s.restartLevel);
   const goLevelSelect = useGameStore((s) => s.goLevelSelect);
 
+  const [showHelp, setShowHelp] = useState(false);
+
   if (!level) return null;
 
   return (
@@ -26,6 +31,7 @@ export function GameScreen() {
       <div className="topbar">
         <div className="topbar__row">
           <MovesCounter />
+          <TimerCounter />
           <ScoreCounter />
         </div>
         {objectives.map((o, i) => (
@@ -34,9 +40,13 @@ export function GameScreen() {
         {bossActive && <BossCatMeter />}
       </div>
 
-      {activeBooster && (
+      {activeBooster ? (
         <p className="center muted" style={{ margin: 0 }}>
           Toque no tabuleiro para usar o booster 🎯
+        </p>
+      ) : (
+        <p className="center muted" style={{ margin: 0, fontSize: 13 }}>
+          Arraste ou toque para trocar dois gatinhos
         </p>
       )}
 
@@ -48,12 +58,15 @@ export function GameScreen() {
         <Button variant="ghost" small onClick={goLevelSelect}>
           ← Voltar
         </Button>
-        <span className="muted">Fase {level.id} · {level.name}</span>
+        <Button variant="ghost" small icon onClick={() => setShowHelp(true)}>
+          ❓
+        </Button>
         <Button variant="ghost" small onClick={restartLevel}>
           🔁 Reiniciar
         </Button>
       </div>
 
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
       {status === 'won' && <VictoryModal />}
       {status === 'lost' && <DefeatModal />}
     </div>

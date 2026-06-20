@@ -1,8 +1,14 @@
 node_modules
 dist
 dist-ssr
+*.tsbuildinfo
 *.local
 .vite
+
+# Local env (Firebase keys) — keep .env.example committed
+.env
+.env.*
+!.env.example
 
 # Editor
 .vscode/*

@@ -90,7 +90,7 @@ export interface Level {
 
 // ---- Game flow ----
 
-export type Screen = 'home' | 'levelSelect' | 'game';
+export type Screen = 'home' | 'levelSelect' | 'game' | 'leaderboard';
 
 export type GameStatus = 'playing' | 'won' | 'lost';
 

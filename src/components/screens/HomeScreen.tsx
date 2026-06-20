@@ -5,7 +5,10 @@ import { CATS, CAT_TYPES } from '../../data/cats';
 /** Title screen: logo, mascot, and the main menu. */
 export function HomeScreen() {
   const goLevelSelect = useGameStore((s) => s.goLevelSelect);
+  const goLeaderboard = useGameStore((s) => s.goLeaderboard);
   const startLevel = useGameStore((s) => s.startLevel);
+  const resumeGame = useGameStore((s) => s.resumeGame);
+  const savedGameExists = useGameStore((s) => s.savedGameExists);
   const unlocked = useGameStore((s) => s.unlockedLevel);
   const soundEnabled = useGameStore((s) => s.soundEnabled);
   const toggleSound = useGameStore((s) => s.toggleSound);
@@ -42,21 +45,29 @@ export function HomeScreen() {
       </div>
 
       <div className="stack">
+        {savedGameExists && (
+          <Button variant="green" block onClick={resumeGame}>
+            ▶ Continuar
+          </Button>
+        )}
         <Button
-          variant="green"
+          variant={savedGameExists ? 'blue' : 'green'}
           block
           onClick={() => startLevel(Math.min(unlocked, 5))}
         >
-          ▶ Jogar
+          {savedGameExists ? '🎮 Nova partida' : '▶ Jogar'}
         </Button>
         <div className="row">
           <Button variant="blue" block onClick={goLevelSelect}>
             🐾 Fases
           </Button>
-          <Button variant="purple" block onClick={toggleSound}>
-            {soundEnabled ? '🔊' : '🔇'} Som
+          <Button variant="purple" block onClick={goLeaderboard}>
+            🏆 Ranking
           </Button>
         </div>
+        <Button variant="ghost" block small onClick={toggleSound}>
+          {soundEnabled ? '🔊 Som ligado' : '🔇 Som desligado'}
+        </Button>
       </div>
 
       <div className="chips">

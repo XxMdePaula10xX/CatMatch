@@ -12,6 +12,7 @@
     "smoke": "esbuild scripts/smoke.ts --bundle --platform=node --format=esm --outfile=node_modules/.tmp/smoke.mjs && node node_modules/.tmp/smoke.mjs"
   },
   "dependencies": {
+    "firebase": "^10.13.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.4"

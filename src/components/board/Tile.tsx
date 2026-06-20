@@ -10,14 +10,14 @@ interface TileProps {
   cols: number;
   selected: boolean;
   hint: boolean;
-  onClick: (row: number, col: number) => void;
 }
 
 /**
  * Positions a tile absolutely within the board (so falls/swaps animate via CSS
- * transitions) and renders the correct inner visual for its type.
+ * transitions) and renders the correct inner visual for its type. Pointer
+ * interaction (tap + drag) is handled by the parent board via data attributes.
  */
-function TileComponent({ tile, rows, cols, selected, hint, onClick }: TileProps) {
+function TileComponent({ tile, rows, cols, selected, hint }: TileProps) {
   if (tile.type === 'empty') return null;
 
   const movable = tile.type === 'cat' || tile.type === 'specialCat';
@@ -47,7 +47,8 @@ function TileComponent({ tile, rows, cols, selected, hint, onClick }: TileProps)
     <div
       className={className}
       style={style}
-      onClick={() => onClick(tile.row, tile.col)}
+      data-row={tile.row}
+      data-col={tile.col}
     >
       {(tile.type === 'cat' || tile.type === 'specialCat') && tile.catType && (
         <CatTile catType={tile.catType} specialType={tile.specialType} />

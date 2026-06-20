@@ -1,21 +1,40 @@
+import { useState } from 'react';
 import type { CatType, SpecialCatType } from '../../game/types';
-import { CATS, SPECIAL_CATS } from '../../data/cats';
+import { CATS, SPECIAL_CATS, CAT_IMAGE, SPECIAL_IMAGE } from '../../data/cats';
 
 interface CatTileProps {
   catType: CatType;
   specialType?: SpecialCatType;
 }
 
-/** Inner visual for a basic or special cat tile. */
+/**
+ * Inner visual for a basic or special cat tile. Renders the final PNG art when
+ * present in `public/cats/`; otherwise gracefully falls back to the emoji.
+ */
 export function CatTile({ catType, specialType }: CatTileProps) {
   const def = CATS[catType];
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const src = specialType ? SPECIAL_IMAGE[specialType] : CAT_IMAGE[catType];
+  const emoji = specialType ? SPECIAL_CATS[specialType].emoji : def.emoji;
+
   const background = `radial-gradient(circle at 35% 28%, ${lighten(
     def.color,
   )}, ${def.color} 60%, ${def.colorDark})`;
 
   return (
     <div className="tile__inner" style={{ background }}>
-      <span aria-hidden>{specialType ? SPECIAL_CATS[specialType].emoji : def.emoji}</span>
+      {imgFailed ? (
+        <span aria-hidden>{emoji}</span>
+      ) : (
+        <img
+          className="tile__img"
+          src={src}
+          alt=""
+          draggable={false}
+          onError={() => setImgFailed(true)}
+        />
+      )}
       {specialType && (
         <span className="tile__special-badge" aria-hidden>
           ⭐

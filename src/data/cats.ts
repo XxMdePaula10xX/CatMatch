@@ -118,6 +118,39 @@ export const SPECIAL_CATS: Record<SpecialCatType, SpecialCatDef> = {
   },
 };
 
+/** How each special cat is created (shown in the in-game guide). */
+export const SPECIAL_CREATE: Record<SpecialCatType, string> = {
+  ninjaH: 'Combine 4 gatos iguais em linha',
+  ninjaV: 'Combine 4 gatos iguais em coluna',
+  sleepy: 'Aparece em fases avançadas',
+  magician: 'Combine 5 gatos iguais',
+  angry: 'Combine gatos em formato L ou T',
+  lucky: 'Recompensa de combo / fases especiais',
+};
+
+/**
+ * Image sources for the cat art. Drop final PNGs into `public/cats/` using
+ * these exact filenames and they replace the emoji automatically.
+ * See `public/cats/README.md`.
+ */
+export const CAT_IMAGE: Record<CatType, string> = {
+  orange: '/cats/orange.png',
+  gray: '/cats/gray.png',
+  white: '/cats/white.png',
+  black: '/cats/black.png',
+  siamese: '/cats/siamese.png',
+  tabby: '/cats/tabby.png',
+};
+
+export const SPECIAL_IMAGE: Record<SpecialCatType, string> = {
+  ninjaH: '/cats/ninja.png',
+  ninjaV: '/cats/ninja.png',
+  sleepy: '/cats/sleepy.png',
+  magician: '/cats/magician.png',
+  angry: '/cats/angry.png',
+  lucky: '/cats/lucky.png',
+};
+
 /** Temporary emoji placeholders, mirroring the PRD list. */
 export const CAT_PLACEHOLDERS = {
   orange: '🐱',

@@ -74,6 +74,37 @@ powers → obstacle damage → yarn → Boss charge → Boss power → gravity �
 cascade → objectives → moves → win/lose. The store commits intermediate board
 snapshots so CSS transitions animate swaps, pops, and falls.
 
+## ✨ Recursos de jogo
+
+- **Toque ou arraste** um gatinho na direção desejada para trocar peças.
+- **Cronômetro** por fase: quanto mais rápido, maior o multiplicador aplicado
+  ao **High Score** (×3 até 60s, ×2 até 120s, ×1.5 até 180s).
+- **Guia de poderes** (botão ❓) explicando cada gato, especial e obstáculo;
+  além de avisos na tela quando um poder é ativado.
+- **Salvar & retomar:** a partida em andamento é salva automaticamente; a tela
+  inicial mostra **Continuar**. Recordes e progresso ficam no `localStorage`.
+- **Ranking (leaderboard):** compare sua pontuação com outros jogadores.
+
+## 🖼️ Arte dos gatos (PNGs)
+
+O jogo carrega as imagens finais de `public/cats/` (veja
+`public/cats/README.md` para os nomes exatos). Enquanto um arquivo não existir,
+o emoji é usado como reserva — então dá para adicionar um gato de cada vez.
+
+## 🏆 Leaderboard global (Firebase)
+
+O ranking funciona **localmente sem configuração**. Para torná-lo global entre
+todos os jogadores:
+
+1. Crie um projeto em <https://console.firebase.google.com>.
+2. Adicione um app **Web** e copie o `firebaseConfig`.
+3. Ative o **Firestore Database**.
+4. Copie `.env.example` para `.env` e preencha as chaves `VITE_FIREBASE_*`.
+5. Rode `npm run dev` de novo. Pronto: as pontuações passam a ser compartilhadas.
+
+> Regra de Firestore sugerida (leitura pública, escrita controlada) deve ser
+> configurada no console antes de publicar.
+
 ## 🚀 After the MVP
 
 Lives, booster shop, coins, more levels, a progression map, cat skins, daily
