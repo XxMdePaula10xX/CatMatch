@@ -19,10 +19,13 @@ export function VictoryModal() {
   const restartLevel = useGameStore((s) => s.restartLevel);
   const goLevelSelect = useGameStore((s) => s.goLevelSelect);
   const goLeaderboard = useGameStore((s) => s.goLeaderboard);
+  const user = useGameStore((s) => s.user);
+  const authAvailable = useGameStore((s) => s.authAvailable);
 
   const stars = computeStars(movesLeft, totalMoves);
   const hasNext = !!getLevel(levelId + 1);
   const isRecord = highScore >= bestHigh;
+  const promptLogin = authAvailable && !user;
 
   return (
     <Modal variant="win">
@@ -47,6 +50,11 @@ export function VictoryModal() {
         </div>
       </div>
       {isRecord && <div className="record-badge">🎉 Novo recorde!</div>}
+      {promptLogin && (
+        <p className="muted" style={{ fontSize: 13, margin: '4px 0 10px' }}>
+          Entre no ranking para salvar sua pontuação online 🌍
+        </p>
+      )}
 
       <div className="stack">
         {hasNext ? (
@@ -63,7 +71,7 @@ export function VictoryModal() {
             🔁 Repetir
           </Button>
           <Button variant="purple" small block onClick={goLeaderboard}>
-            🏆 Ranking
+            {promptLogin ? '🏆 Entrar' : '🏆 Ranking'}
           </Button>
         </div>
       </div>

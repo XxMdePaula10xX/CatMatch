@@ -91,19 +91,27 @@ O jogo carrega as imagens finais de `public/cats/` (veja
 `public/cats/README.md` para os nomes exatos). Enquanto um arquivo não existir,
 o emoji é usado como reserva — então dá para adicionar um gato de cada vez.
 
-## 🏆 Leaderboard global (Firebase)
+## 🏆 Leaderboard global + login (Firebase)
 
-O ranking funciona **localmente sem configuração**. Para torná-lo global entre
-todos os jogadores:
+**Jogar não exige conta** — o login serve só para entrar no ranking global.
+Cada jogador logado mantém **um melhor recorde por fase**. Sem configuração, o
+ranking roda em modo local (com nomes de exemplo) e o login fica desativado.
+
+Para ativar online:
 
 1. Crie um projeto em <https://console.firebase.google.com>.
 2. Adicione um app **Web** e copie o `firebaseConfig`.
-3. Ative o **Firestore Database**.
-4. Copie `.env.example` para `.env` e preencha as chaves `VITE_FIREBASE_*`.
-5. Rode `npm run dev` de novo. Pronto: as pontuações passam a ser compartilhadas.
+3. **Firestore Database:** ative (modo de produção).
+4. **Authentication → Sign-in method:** ative **Google** (e, para iOS,
+   **Apple** — exige conta Apple Developer + Services ID).
+5. Em **Authentication → Settings → Authorized domains**, inclua o domínio onde
+   o app roda (`localhost` já vem incluído para dev).
+6. Copie `.env.example` para `.env`, preencha as chaves `VITE_FIREBASE_*` e rode
+   `npm run dev` de novo.
 
-> Regra de Firestore sugerida (leitura pública, escrita controlada) deve ser
-> configurada no console antes de publicar.
+> Regra do Firestore sugerida: leitura pública da coleção `scores`, escrita
+> apenas por usuários autenticados (`request.auth != null`). Configure no
+> console antes de publicar.
 
 ## 🚀 After the MVP
 

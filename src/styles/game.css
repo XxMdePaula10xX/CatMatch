@@ -781,6 +781,39 @@
   font-style: italic;
 }
 
+/* ---------- Account / login ---------- */
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.account__avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  flex: 0 0 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  background: var(--panel-2);
+  border: 3px solid var(--border);
+  object-fit: cover;
+}
+.account__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.account__info strong {
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---------- Leaderboard ---------- */
 .nick-input {
   flex: 1;

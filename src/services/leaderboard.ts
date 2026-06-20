@@ -1,6 +1,8 @@
 import {
   collection,
-  addDoc,
+  doc,
+  getDoc,
+  setDoc,
   getDocs,
   query,
   orderBy,
@@ -14,6 +16,7 @@ export interface LeaderEntry {
   name: string;
   score: number;
   level: number;
+  uid?: string;
   createdAt?: number;
 }
 
@@ -47,23 +50,53 @@ function writeLocal(entries: LeaderEntry[]): void {
   }
 }
 
-/** Submits a score to the global leaderboard (or the local fallback). */
+/**
+ * Submits a score. For signed-in users it keeps a single best-score document
+ * per (user, level) in Firestore. Guests / unconfigured Firebase fall back to
+ * the local list.
+ */
 export async function submitScore(entry: LeaderEntry): Promise<void> {
-  if (firebaseEnabled) {
+  if (firebaseEnabled && entry.uid) {
     const db = getDb();
     if (db) {
-      await addDoc(collection(db, COLLECTION), {
-        name: entry.name,
-        score: entry.score,
-        level: entry.level,
-        createdAt: serverTimestamp(),
-      });
+      const ref = doc(db, COLLECTION, `${entry.uid}_${entry.level}`);
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? (snap.data().score as number) : 0;
+      if (entry.score > prev) {
+        await setDoc(ref, {
+          uid: entry.uid,
+          name: entry.name,
+          score: entry.score,
+          level: entry.level,
+          updatedAt: serverTimestamp(),
+        });
+      }
       return;
     }
   }
+
+  // Local fallback (guest or no Firebase). Keep best per name+level.
   const entries = readLocal();
-  entries.push({ ...entry, createdAt: Date.now() });
+  const idx = entries.findIndex(
+    (e) => e.name === entry.name && e.level === entry.level,
+  );
+  if (idx >= 0) {
+    if (entry.score > entries[idx].score) entries[idx] = { ...entry };
+  } else {
+    entries.push({ ...entry, createdAt: Date.now() });
+  }
   writeLocal(entries);
+}
+
+/** Keeps only each user's single best entry (for the "Geral" view). */
+function dedupeByUser(entries: LeaderEntry[]): LeaderEntry[] {
+  const best = new Map<string, LeaderEntry>();
+  for (const e of entries) {
+    const key = e.uid ?? e.name;
+    const current = best.get(key);
+    if (!current || e.score > current.score) best.set(key, e);
+  }
+  return [...best.values()];
 }
 
 /**
@@ -86,14 +119,17 @@ export async function getTopScores(
               orderBy('score', 'desc'),
               limit(max),
             )
-          : query(base, orderBy('score', 'desc'), limit(max));
+          : query(base, orderBy('score', 'desc'), limit(max * 2));
       const snap = await getDocs(q);
-      return snap.docs.map((d) => d.data() as LeaderEntry);
+      let rows = snap.docs.map((d) => d.data() as LeaderEntry);
+      if (level == null) rows = dedupeByUser(rows);
+      return rows.sort((a, b) => b.score - a.score).slice(0, max);
     }
   }
 
   let entries = readLocal();
   if (level != null) entries = entries.filter((e) => e.level === level);
+  else entries = dedupeByUser(entries);
   return entries.sort((a, b) => b.score - a.score).slice(0, max);
 }
 

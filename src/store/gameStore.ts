@@ -33,6 +33,14 @@ import { SPECIAL_CATS } from '../data/cats';
 import type { BoosterId } from '../data/boosters';
 import * as storage from '../services/storage';
 import { submitScore } from '../services/leaderboard';
+import {
+  onAuthChange,
+  signInWithGoogle,
+  signInWithApple,
+  signOutUser,
+  authAvailable,
+  type AppUser,
+} from '../services/auth';
 
 // Animation timings (ms).
 const T = { swap: 180, pop: 240, fall: 240, boss: 600 };
@@ -77,6 +85,9 @@ interface GameState {
   savedGameExists: boolean;
   nickname: string;
   soundEnabled: boolean;
+  user: AppUser | null;
+  authReady: boolean;
+  authAvailable: boolean;
 
   // ----- actions -----
   goHome: () => void;
@@ -92,6 +103,9 @@ interface GameState {
   toggleSound: () => void;
   setNickname: (name: string) => void;
   tick: () => void;
+  signInGoogle: () => Promise<void>;
+  signInApple: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 let floatId = 0;
@@ -315,9 +329,10 @@ export const useGameStore = create<GameState>((set, get) => {
       storage.saveMeta({ unlockedLevel: unlocked, stars: newStars });
       storage.clearSavedGame();
       void submitScore({
-        name: state.nickname || 'Jogador',
+        name: state.nickname || state.user?.name || 'Jogador',
         score: high,
         level: level.id,
+        uid: state.user?.uid,
       });
       soundManager.play('victory');
       set({
@@ -451,6 +466,19 @@ export const useGameStore = create<GameState>((set, get) => {
     if (init) set({ savedGameExists: true });
   }
 
+  // Subscribe to auth changes (deferred so `set` is ready). In guest mode
+  // (no Firebase) this fires once with null and marks auth as ready.
+  setTimeout(() => {
+    onAuthChange((user) => {
+      const patch: Partial<GameState> = { user, authReady: true };
+      if (user && !get().nickname) {
+        storage.saveNickname(user.name);
+        patch.nickname = user.name;
+      }
+      set(patch);
+    });
+  }, 0);
+
   return {
     screen: 'home',
     level: null,
@@ -485,6 +513,9 @@ export const useGameStore = create<GameState>((set, get) => {
     savedGameExists: storage.loadSavedGame() !== null,
     nickname: storage.loadNickname(),
     soundEnabled: true,
+    user: null,
+    authReady: !authAvailable,
+    authAvailable,
 
     goHome: () => {
       soundManager.play('button');
@@ -597,6 +628,28 @@ export const useGameStore = create<GameState>((set, get) => {
       const s = get();
       if (s.screen === 'game' && s.status === 'playing')
         set({ elapsedMs: s.elapsedMs + 1000 });
+    },
+
+    signInGoogle: async () => {
+      soundManager.play('button');
+      try {
+        await signInWithGoogle();
+      } catch (e) {
+        console.warn('Login Google falhou', e);
+      }
+    },
+    signInApple: async () => {
+      soundManager.play('button');
+      try {
+        await signInWithApple();
+      } catch (e) {
+        console.warn('Login Apple falhou', e);
+      }
+    },
+    signOut: async () => {
+      soundManager.play('button');
+      await signOutUser();
+      set({ user: null });
     },
   };
 });

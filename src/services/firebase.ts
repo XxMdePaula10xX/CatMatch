@@ -3,8 +3,8 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 
 /**
  * Firebase config is read from Vite env vars (a `.env` file). If the API key is
- * missing, the leaderboard transparently falls back to local storage, so the
- * app works fully offline until you add your keys. See `.env.example`.
+ * missing, the leaderboard/auth transparently fall back to local/guest mode, so
+ * the app works fully offline until you add your keys. See `.env.example`.
  */
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string | undefined,
@@ -22,12 +22,17 @@ export const firebaseEnabled = Boolean(config.apiKey && config.projectId);
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 
+/** Lazily initialises the shared Firebase app. Null when not configured. */
+export function getFirebaseApp(): FirebaseApp | null {
+  if (!firebaseEnabled) return null;
+  if (!app) app = initializeApp(config as Record<string, string>);
+  return app;
+}
+
 /** Lazily initialises Firestore. Returns null when Firebase isn't configured. */
 export function getDb(): Firestore | null {
-  if (!firebaseEnabled) return null;
-  if (!db) {
-    app = initializeApp(config as Record<string, string>);
-    db = getFirestore(app);
-  }
+  const a = getFirebaseApp();
+  if (!a) return null;
+  if (!db) db = getFirestore(a);
   return db;
 }
