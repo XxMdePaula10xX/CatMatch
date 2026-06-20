@@ -77,7 +77,8 @@ snapshots so CSS transitions animate swaps, pops, and falls.
 ## ✨ Recursos de jogo
 
 - **Modos de jogo:**
-  - 🐾 **Fases** — campanha de 5 níveis com objetivos.
+  - 🐾 **Fases** — campanha de **60 níveis** com dificuldade crescente (5
+    curados + 55 gerados proceduralmente, em 6 mundos temáticos).
   - 📅 **Desafio Diário** — tabuleiro idêntico para todos no mesmo dia (semente
     fixa), com **ranking do dia**.
   - ⚡ **Relâmpago** — 60 segundos para pontuar o máximo (ranking semanal).

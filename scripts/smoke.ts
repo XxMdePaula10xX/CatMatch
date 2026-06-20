@@ -25,7 +25,9 @@ function countTiles(board: Board) {
   return { cats, empty };
 }
 
-// 1. Board generation has no initial matches for every level.
+// 1. Every level (all 60) is well-formed and its objectives are feasible.
+assert(levels.length === 60, `there are 60 levels (got ${levels.length})`);
+let prevHardness = 0;
 for (const level of levels) {
   const board = createBoard(level.boardConfig);
   assert(board.length === 8 && board[0].length === 8, `level ${level.id} is 8x8`);
@@ -34,7 +36,30 @@ for (const level of levels) {
     `level ${level.id} starts with no matches`,
   );
   assert(findHint(board) !== null, `level ${level.id} has at least one move`);
+
+  const obstacles = level.boardConfig.obstacles ?? [];
+  const yarns = level.boardConfig.yarns ?? [];
+  for (const o of level.objectives) {
+    if (o.type === 'breakBox') {
+      const boxes = obstacles.filter((x) => x.type === 'box').length;
+      assert(boxes >= o.target, `level ${level.id}: ${boxes} boxes >= target ${o.target}`);
+    }
+    if (o.type === 'activateYarn') {
+      assert(yarns.length >= o.target, `level ${level.id}: ${yarns.length} yarns >= target ${o.target}`);
+    }
+    if (o.type === 'chargeBoss') {
+      assert(!!level.boardConfig.bossCat, `level ${level.id}: boss enabled for chargeBoss`);
+    }
+  }
 }
+// Rough difficulty trend: average objective target should grow across worlds.
+const worldAvg = (lo: number, hi: number) => {
+  const ls = levels.filter((l) => l.id >= lo && l.id <= hi);
+  const sum = ls.reduce((a, l) => a + l.objectives.reduce((s, o) => s + o.target, 0), 0);
+  return sum / ls.length;
+};
+prevHardness = worldAvg(1, 10);
+assert(worldAvg(51, 60) > prevHardness, 'late levels are harder than early ones');
 
 // 2. A valid swap resolves and refills with no holes remaining.
 const level = levels[0];

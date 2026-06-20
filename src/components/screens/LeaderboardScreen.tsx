@@ -147,15 +147,22 @@ export function LeaderboardScreen() {
         >
           Geral
         </button>
-        {levels.map((l) => (
-          <button
-            key={l.id}
-            className={`filter ${filter === l.id ? 'on' : ''}`}
-            onClick={() => setFilter(l.id)}
-          >
-            F{l.id}
-          </button>
-        ))}
+        <select
+          className={`filter filter--select ${
+            typeof filter === 'number' ? 'on' : ''
+          }`}
+          value={typeof filter === 'number' ? filter : ''}
+          onChange={(e) =>
+            setFilter(e.target.value ? Number(e.target.value) : 'all')
+          }
+        >
+          <option value="">Por fase…</option>
+          {levels.map((l) => (
+            <option key={l.id} value={l.id}>
+              Fase {l.id}
+            </option>
+          ))}
+        </select>
       </div>
 
       <p className="center muted" style={{ margin: 0, fontSize: 12 }}>

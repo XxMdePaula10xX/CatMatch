@@ -1,10 +1,23 @@
-import type { Level } from '../game/types';
+import type { CatType, Level, Objective, ObstacleType } from '../game/types';
+import { mulberry32 } from '../game/random';
+
+/** All basic cats, in difficulty order (more types = harder to match). */
+export const ALL_CATS: CatType[] = [
+  'orange',
+  'gray',
+  'white',
+  'black',
+  'siamese',
+  'tabby',
+];
+
+export const TOTAL_LEVELS = 60;
 
 /**
- * The five MVP levels described in the PRD. Difficulty ramps up by
- * introducing one new mechanic at a time.
+ * The five curated tutorial levels from the PRD. Levels 6–60 are generated
+ * procedurally on top of these with a rising difficulty curve.
  */
-export const levels: Level[] = [
+const CURATED: Level[] = [
   {
     id: 1,
     name: 'Primeiros Miados',
@@ -43,6 +56,8 @@ export const levels: Level[] = [
         { row: 3, col: 4, type: 'box' },
         { row: 5, col: 2, type: 'box' },
         { row: 5, col: 5, type: 'box' },
+        { row: 6, col: 1, type: 'box' },
+        { row: 6, col: 6, type: 'box' },
         { row: 4, col: 0, type: 'scratcher' },
         { row: 4, col: 7, type: 'scratcher' },
       ],
@@ -86,21 +101,171 @@ export const levels: Level[] = [
   },
 ];
 
+const WORLD_NAMES = [
+  'Casa Aconchegante',
+  'Quintal Bagunçado',
+  'Telhado dos Gatos',
+  'Beco Travesso',
+  'Parque Felino',
+  'Castelo Real',
+];
+
+type Archetype =
+  | 'score'
+  | 'collectCat'
+  | 'breakBox'
+  | 'activateYarn'
+  | 'chargeBoss';
+
+const clamp = (n: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, n));
+const round50 = (n: number) => Math.round(n / 50) * 50;
+
+/** Generates a single level (id 6..60) with a difficulty-scaled objective. */
+function genLevel(i: number): Level {
+  const rng = mulberry32(7919 + i * 131);
+  const world = Math.ceil(i / 10);
+  const nCats = i <= 4 ? 4 : i <= 10 ? 5 : 6;
+  const availableCats = ALL_CATS.slice(0, nCats);
+
+  const obstacles: Array<{ row: number; col: number; type: ObstacleType }> = [];
+  const yarns: Array<{ row: number; col: number }> = [];
+  const occupied = new Set<string>();
+
+  const freePos = (): { row: number; col: number } | null => {
+    if (occupied.size >= 18) return null;
+    for (let t = 0; t < 40; t++) {
+      const row = 1 + Math.floor(rng() * 6); // rows 1..6
+      const col = Math.floor(rng() * 8);
+      const k = `${row},${col}`;
+      if (!occupied.has(k)) {
+        occupied.add(k);
+        return { row, col };
+      }
+    }
+    return null;
+  };
+  const placeObstacles = (type: ObstacleType, n: number): number => {
+    let placed = 0;
+    for (let k = 0; k < n; k++) {
+      const p = freePos();
+      if (!p) break;
+      obstacles.push({ ...p, type });
+      placed++;
+    }
+    return placed;
+  };
+  const placeYarns = (n: number): number => {
+    let placed = 0;
+    for (let k = 0; k < n; k++) {
+      const p = freePos();
+      if (!p) break;
+      yarns.push(p);
+      placed++;
+    }
+    return placed;
+  };
+
+  // Choose the primary objective; gate complex ones behind early levels.
+  const isBoss = i % 10 === 0; // milestone climaxes
+  const pool: Archetype[] = ['score', 'collectCat'];
+  if (i >= 6) pool.push('breakBox');
+  if (i >= 8) pool.push('activateYarn');
+  if (i >= 10) pool.push('chargeBoss');
+  const primary: Archetype = isBoss ? 'chargeBoss' : pool[i % pool.length];
+
+  const objectives: Objective[] = [];
+  let bossCat = false;
+  let moveBonus = 0;
+
+  switch (primary) {
+    case 'score':
+      objectives.push({ type: 'score', target: round50(400 + i * 140) });
+      moveBonus = 2;
+      break;
+    case 'collectCat': {
+      const cat = availableCats[i % nCats];
+      objectives.push({
+        type: 'collectCat',
+        catType: cat,
+        target: 8 + Math.floor(i / 4),
+      });
+      break;
+    }
+    case 'breakBox': {
+      const want = clamp(5 + Math.floor(i / 5), 5, 14);
+      const placed = placeObstacles('box', want);
+      objectives.push({ type: 'breakBox', target: Math.max(3, placed) });
+      moveBonus = 2;
+      break;
+    }
+    case 'activateYarn': {
+      const want = clamp(3 + Math.floor(i / 14), 3, 7);
+      const placed = placeYarns(want);
+      objectives.push({ type: 'activateYarn', target: Math.max(2, placed) });
+      moveBonus = 1;
+      break;
+    }
+    case 'chargeBoss': {
+      bossCat = true;
+      objectives.push({
+        type: 'chargeBoss',
+        target: clamp(1 + Math.floor(i / 18), 1, 4),
+      });
+      moveBonus = 4;
+      break;
+    }
+  }
+
+  // Boss milestones add a score goal; later levels stack a secondary goal.
+  if (isBoss) {
+    objectives.push({ type: 'score', target: round50(1500 + i * 150) });
+    moveBonus += 3;
+  } else if (i >= 22 && primary !== 'score') {
+    objectives.push({ type: 'score', target: round50(500 + i * 120) });
+    moveBonus += 2;
+  }
+
+  // Extra hazards for flavour/difficulty in later worlds.
+  if (i >= 14 && primary !== 'breakBox' && rng() < 0.6) {
+    placeObstacles('box', clamp(2 + Math.floor(i / 12), 2, 6));
+  }
+  if (i >= 12 && rng() < 0.5) placeObstacles('scratcher', 2);
+  if (i >= 18 && primary !== 'activateYarn' && rng() < 0.4) placeYarns(2);
+
+  // Moves tighten as levels go up.
+  let moves = clamp(30 - Math.floor((i - 1) / 6), 18, 30) + moveBonus;
+  moves = clamp(moves, 18, 34);
+
+  return {
+    id: i,
+    name: WORLD_NAMES[world - 1] ?? 'Aventura Felina',
+    moves,
+    objectives,
+    boardConfig: {
+      rows: 8,
+      cols: 8,
+      availableCats,
+      ...(obstacles.length ? { obstacles } : {}),
+      ...(yarns.length ? { yarns } : {}),
+      ...(bossCat ? { bossCat: true } : {}),
+    },
+  };
+}
+
+function buildLevels(): Level[] {
+  const out = [...CURATED];
+  for (let i = CURATED.length + 1; i <= TOTAL_LEVELS; i++) {
+    out.push(genLevel(i));
+  }
+  return out;
+}
+
+export const levels: Level[] = buildLevels();
+
 export function getLevel(id: number): Level | undefined {
   return levels.find((l) => l.id === id);
 }
-
-import type { CatType } from '../game/types';
-
-/** All basic cats, used by the score-attack modes. */
-export const ALL_CATS: CatType[] = [
-  'orange',
-  'gray',
-  'white',
-  'black',
-  'siamese',
-  'tabby',
-];
 
 export const DAILY_LEVEL_ID = 1000;
 export const BLITZ_LEVEL_ID = 1001;

@@ -859,6 +859,14 @@
   color: #fff;
   border-color: var(--purple);
 }
+.filter--select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.filter--select.on {
+  color: #fff;
+}
 .ranking {
   list-style: none;
   margin: 0;
