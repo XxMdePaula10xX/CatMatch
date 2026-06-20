@@ -85,11 +85,6 @@ export function LeaderboardScreen() {
         ) : user ? (
           <>
             <div className="account">
-              {user.photoURL ? (
-                <img className="account__avatar" src={user.photoURL} alt="" />
-              ) : (
-                <div className="account__avatar">😺</div>
-              )}
               <div className="account__info">
                 <strong>{nickname || user.name}</strong>
                 <span className="muted" style={{ fontSize: 12 }}>
