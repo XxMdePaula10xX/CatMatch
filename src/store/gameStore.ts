@@ -823,6 +823,14 @@ export const useGameStore = create<GameState>((set, get) => {
 
   // Subscribe to auth changes (deferred so `set` is ready). On login, merge
   // the cloud save with local progress and push the union back up.
+  // Safety net: if auth state never resolves (e.g. flaky network in the native
+  // shell), stop showing "loading account" after a few seconds.
+  if (authAvailable) {
+    setTimeout(() => {
+      if (!get().authReady) set({ authReady: true });
+    }, 6000);
+  }
+
   setTimeout(() => {
     onAuthChange(async (user) => {
       if (!user) {

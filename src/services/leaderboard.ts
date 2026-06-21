@@ -49,6 +49,16 @@ function periodFor(scope: Scope): string {
   return scope === 'daily' ? getDayId() : getWeekId();
 }
 
+/** Rejects after `ms` so a hung network request never freezes the UI. */
+function withTimeout<T>(p: Promise<T>, ms = 10000): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms),
+    ),
+  ]);
+}
+
 /** Seeds so the weekly board isn't empty on first run (local mode only). */
 function seed(): LeaderEntry[] {
   const week = getWeekId();
@@ -171,7 +181,7 @@ export async function getTopScores(
               orderBy('score', 'desc'),
               limit(max * 2),
             );
-        const snap = await getDocs(q);
+        const snap = await withTimeout(getDocs(q));
         let rows = snap.docs.map((d) => d.data() as LeaderEntry);
         if (!params.board) rows = dedupeByUser(rows);
         return rows.sort((a, b) => b.score - a.score).slice(0, max);
@@ -217,7 +227,7 @@ export async function getPlayerRank(
         where('periodId', '==', periodId),
         where('score', '>', myScore),
       );
-      const snap = await getCountFromServer(q);
+      const snap = await withTimeout(getCountFromServer(q));
       return snap.data().count + 1;
     } catch {
       return null;

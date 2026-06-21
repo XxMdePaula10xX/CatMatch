@@ -36,11 +36,13 @@ function TileComponent({ tile, rows, cols, selected, hint }: TileProps) {
     .filter(Boolean)
     .join(' ');
 
+  // Position via transform (GPU-composited) instead of top/left so falls and
+  // swaps stay smooth on mobile. The tile is exactly one cell, so translating
+  // by N*100% of its own size lands it on cell (row, col).
   const style = {
-    left: `calc(${tile.col} * (100% / ${cols}))`,
-    top: `calc(${tile.row} * (100% / ${rows}))`,
     width: `calc(100% / ${cols})`,
     height: `calc(100% / ${rows})`,
+    transform: `translate(${tile.col * 100}%, ${tile.row * 100}%)`,
   };
 
   return (

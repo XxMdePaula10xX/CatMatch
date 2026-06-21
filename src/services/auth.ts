@@ -1,5 +1,8 @@
 import {
   getAuth,
+  initializeAuth,
+  browserLocalPersistence,
+  indexedDBLocalPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -24,7 +27,18 @@ let auth: Auth | null = null;
 function getAuthInstance(): Auth | null {
   const app = getFirebaseApp();
   if (!app) return null;
-  if (!auth) auth = getAuth(app);
+  if (!auth) {
+    try {
+      // Prefer localStorage persistence: IndexedDB (the default) can hang
+      // inside the iOS WKWebView, leaving auth state stuck on "loading".
+      auth = initializeAuth(app, {
+        persistence: [browserLocalPersistence, indexedDBLocalPersistence],
+      });
+    } catch {
+      // Already initialised elsewhere.
+      auth = getAuth(app);
+    }
+  }
   return auth;
 }
 

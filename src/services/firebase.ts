@@ -1,5 +1,8 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  type Firestore,
+} from 'firebase/firestore';
 
 /**
  * Firebase config is read from Vite env vars (a `.env` file). If the API key is
@@ -33,6 +36,12 @@ export function getFirebaseApp(): FirebaseApp | null {
 export function getDb(): Firestore | null {
   const a = getFirebaseApp();
   if (!a) return null;
-  if (!db) db = getFirestore(a);
+  if (!db) {
+    // Force long-polling: the default WebChannel transport hangs inside the
+    // iOS WKWebView (Capacitor), so leaderboard queries never resolve.
+    db = initializeFirestore(a, {
+      experimentalForceLongPolling: true,
+    });
+  }
   return db;
 }

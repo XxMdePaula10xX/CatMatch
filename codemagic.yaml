@@ -44,15 +44,20 @@ workflows:
           EOF
       - name: Install dependencies
         script: npm ci
-      - name: Build web + generate icons/splash
-        script: |
-          npm run build
-          npx capacitor-assets generate --ios || true
+      - name: Build web
+        script: npm run build
       - name: Add & sync iOS platform
         script: |
           # Capacitor sets the bundle id from appId in capacitor.config.ts.
           npx cap add ios || true
           npx cap sync ios
+      - name: Generate app icon + splash
+        script: |
+          # Must run AFTER the iOS project exists so assets land in it.
+          npx capacitor-assets generate --ios \
+            --iconBackgroundColor '#FFF4DC' \
+            --splashBackgroundColor '#FFF4DC' \
+            --splashBackgroundColorDark '#2A2118'
       - name: Declare exempt encryption (skip export compliance prompt)
         script: |
           # App only uses standard HTTPS/TLS -> exempt. This removes the
@@ -60,6 +65,12 @@ workflows:
           PLIST=ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PLIST" \
             || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PLIST"
+      - name: Set incrementing build number
+        script: |
+          # Apple rejects duplicate build numbers; use the next TestFlight one.
+          cd ios/App
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          agvtool new-version -all $((LATEST + 1))
       - name: Install CocoaPods
         script: |
           cd ios/App && pod install
