@@ -162,10 +162,21 @@ Como o iOS exige um Mac para compilar, usamos o **Codemagic** (Mac na nuvem) —
 nenhum Mac local é necessário.
 
 ### Já configurado no repo
-- `capacitor.config.ts` (appId `com.catmatch.app` — **troque pelo seu**)
+- `capacitor.config.ts` (appId `com.matheus.catmatch`)
 - `assets/logo.svg` → ícone e splash gerados por `@capacitor/assets`
-- `public/privacy.html` → política de privacidade (hospede e use a URL na loja)
+- `public/privacy.html` e `docs/privacy.html` → política de privacidade
 - `codemagic.yaml` → pipelines de build iOS (App Store/TestFlight) e Android
+
+### Hospedar a política de privacidade (GitHub Pages)
+1. No GitHub: **Settings → Pages → Build and deployment**.
+2. **Source: Deploy from a branch**, branch `main` (ou a sua), pasta **`/docs`**.
+3. Salve. A URL fica:
+   `https://<seu-usuario>.github.io/<repo>/privacy.html`
+4. Use essa URL no campo "Privacy Policy URL" do App Store Connect.
+
+> O GitHub Pages gratuito requer **repositório público**. Se o seu for privado,
+> use o Firebase Hosting (você já tem Firebase) ou Netlify/Vercel — todos
+> gratuitos.
 
 ### Passos (iOS, sem Mac)
 1. No [Codemagic](https://codemagic.io): conecte este repositório.

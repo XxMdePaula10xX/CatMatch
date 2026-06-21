@@ -7,7 +7,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * first App Store / Play submission (it can't be changed after release).
  */
 const config: CapacitorConfig = {
-  appId: 'com.catmatch.app',
+  appId: 'com.matheus.catmatch',
   appName: 'Cat Match',
   webDir: 'dist',
   backgroundColor: '#FFF4DC',

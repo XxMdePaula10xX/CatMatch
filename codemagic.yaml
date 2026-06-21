@@ -24,7 +24,7 @@ workflows:
       groups:
         - catmatch_env # Firebase VITE_* vars (see SETUP)
       vars:
-        BUNDLE_ID: 'com.catmatch.app'
+        BUNDLE_ID: 'com.matheus.catmatch'
         XCODE_WORKSPACE: 'ios/App/App.xcworkspace'
         XCODE_SCHEME: 'App'
         APP_STORE_APPLE_ID: 0000000000 # your numeric App ID from App Store Connect
