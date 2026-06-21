@@ -11,6 +11,7 @@ import {
   getTopScores,
   getPlayerRank,
   playerTag,
+  countryFlag,
   type LeaderEntry,
   type QueryParams,
 } from '../../services/leaderboard';
@@ -42,6 +43,7 @@ export function LeaderboardScreen() {
   const authAvailable = useGameStore((s) => s.authAvailable);
   const goAuth = useGameStore((s) => s.goAuth);
   const goProfile = useGameStore((s) => s.goProfile);
+  const rankingRefresh = useGameStore((s) => s.rankingRefresh);
   const highScores = useGameStore((s) => s.highScores);
 
   const [filter, setFilter] = useState<Filter>('all');
@@ -76,7 +78,7 @@ export function LeaderboardScreen() {
     return () => {
       active = false;
     };
-  }, [filter, myScore]);
+  }, [filter, myScore, rankingRefresh]);
 
   const isDaily = filter === 'daily';
   const inTop = entries?.some((e) =>
@@ -210,6 +212,11 @@ export function LeaderboardScreen() {
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                 </span>
                 <span className="ranking__name">
+                  {countryFlag(e.country) && (
+                    <span className="ranking__flag" aria-hidden>
+                      {countryFlag(e.country)}{' '}
+                    </span>
+                  )}
                   {e.name}
                   {playerTag(e.uid) && (
                     <span className="ranking__tag">#{playerTag(e.uid)}</span>

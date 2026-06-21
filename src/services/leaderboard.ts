@@ -22,6 +22,8 @@ export interface LeaderEntry {
   periodId: string;
   scope: Scope;
   uid?: string;
+  /** ISO 3166 country code (e.g. "BR"), from the device locale. */
+  country?: string;
   createdAt?: number;
 }
 
@@ -44,6 +46,29 @@ const COLLECTION = 'scores';
 
 function periodFor(scope: Scope): string {
   return scope === 'daily' ? getDayId() : getWeekId();
+}
+
+/** Best-effort ISO country code from the device locale (no GPS, privacy-safe). */
+export function getCountryCode(): string | undefined {
+  try {
+    const loc = navigator.languages?.[0] || navigator.language || '';
+    if (!loc) return undefined;
+    const region = new Intl.Locale(loc).maximize().region;
+    return region || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Turns a 2-letter country code into its flag emoji ("BR" -> 🇧🇷). */
+export function countryFlag(code?: string): string {
+  if (!code || code.length !== 2) return '';
+  const A = 0x1f1e6;
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(
+    A + cc.charCodeAt(0) - 65,
+    A + cc.charCodeAt(1) - 65,
+  );
 }
 
 /** Rejects after `ms` so a hung network request never freezes the UI. */
@@ -102,6 +127,7 @@ export async function submitScore(params: SubmitParams): Promise<void> {
     periodId,
     scope: params.scope,
     uid: params.uid,
+    country: getCountryCode(),
   };
 
   if (firebaseEnabled && entry.uid) {

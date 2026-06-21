@@ -41,6 +41,8 @@ export function getDb(): Firestore | null {
     // iOS WKWebView (Capacitor), so leaderboard queries never resolve.
     db = initializeFirestore(a, {
       experimentalForceLongPolling: true,
+      // Optional fields (e.g. country) may be undefined — don't reject writes.
+      ignoreUndefinedProperties: true,
     });
   }
   return db;

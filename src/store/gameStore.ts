@@ -133,6 +133,8 @@ interface GameState {
   user: AppUser | null;
   authReady: boolean;
   authAvailable: boolean;
+  /** Bumped to force the leaderboard to refetch (e.g. after a rename). */
+  rankingRefresh: number;
 
   stats: Stats;
   achievements: string[];
@@ -919,6 +921,7 @@ export const useGameStore = create<GameState>((set, get) => {
     user: null,
     authReady: !authAvailable,
     authAvailable,
+    rankingRefresh: 0,
 
     stats: storage.loadStats(),
     achievements: storage.loadAchievements(),
@@ -1105,8 +1108,12 @@ export const useGameStore = create<GameState>((set, get) => {
       // Reflect the new name on existing leaderboard entries (and locally).
       const user = get().user;
       if (clean && user) {
-        void renameUserScores(user.uid, clean);
         set({ user: { ...user, name: clean } });
+        void renameUserScores(user.uid, clean).then(() =>
+          set((s) => ({ rankingRefresh: s.rankingRefresh + 1 })),
+        );
+      } else {
+        set((s) => ({ rankingRefresh: s.rankingRefresh + 1 }));
       }
     },
 
