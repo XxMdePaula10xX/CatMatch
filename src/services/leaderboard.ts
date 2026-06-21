@@ -234,6 +234,21 @@ export function isGlobalLeaderboard(): boolean {
 }
 
 /**
+ * A short, stable identifier derived from the account uid (e.g. "A3F2"). It
+ * never changes even if the player renames, so the same person is always
+ * recognizable in the ranking. Returns null for local/guest entries (no uid).
+ */
+export function playerTag(uid?: string): string | null {
+  if (!uid) return null;
+  let h = 2166136261;
+  for (let i = 0; i < uid.length; i++) {
+    h ^= uid.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36).toUpperCase().padStart(4, '0').slice(-4);
+}
+
+/**
  * Updates the display name on all of a user's existing leaderboard entries, so
  * changing the nickname is reflected on past scores (not just new ones).
  */

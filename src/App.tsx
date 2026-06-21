@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
+import { setupDailyReminder, clearBadge, setBadge } from './services/notifications';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { LevelSelectScreen } from './components/screens/LevelSelectScreen';
 import { GameScreen } from './components/screens/GameScreen';
@@ -12,6 +14,26 @@ import { TutorialOverlay } from './components/ui/TutorialOverlay';
 export default function App() {
   const screen = useGameStore((s) => s.screen);
   const showTutorial = useGameStore((s) => s.showTutorial);
+
+  // Native only: schedule the daily play reminder and clear the icon badge on
+  // open / whenever the app comes back to the foreground.
+  useEffect(() => {
+    setupDailyReminder();
+    clearBadge();
+    let remove: (() => void) | undefined;
+    import('@capacitor/app')
+      .then(({ App }) =>
+        App.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) clearBadge();
+          else setBadge();
+        }),
+      )
+      .then((handle) => {
+        remove = () => void handle.remove();
+      })
+      .catch(() => {});
+    return () => remove?.();
+  }, []);
 
   return (
     <div className="app">

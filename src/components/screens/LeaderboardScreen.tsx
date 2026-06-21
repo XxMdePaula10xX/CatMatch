@@ -10,6 +10,7 @@ import { weekLabel } from '../../services/periods';
 import {
   getTopScores,
   getPlayerRank,
+  playerTag,
   type LeaderEntry,
   type QueryParams,
 } from '../../services/leaderboard';
@@ -114,7 +115,10 @@ export function LeaderboardScreen() {
           <>
             <div className="account">
               <div className="account__info">
-                <strong>{nickname || user.name}</strong>
+                <strong>
+                  {nickname || user.name}
+                  <span className="ranking__tag">#{playerTag(user.uid)}</span>
+                </strong>
                 <span className="muted" style={{ fontSize: 12 }}>
                   🌍 Conectado · ranking global
                 </span>
@@ -205,7 +209,12 @@ export function LeaderboardScreen() {
                 <span className="ranking__pos">
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                 </span>
-                <span className="ranking__name">{e.name}</span>
+                <span className="ranking__name">
+                  {e.name}
+                  {playerTag(e.uid) && (
+                    <span className="ranking__tag">#{playerTag(e.uid)}</span>
+                  )}
+                </span>
                 <span className="ranking__lvl">{boardLabel(e.board)}</span>
                 <span className="ranking__score">
                   {e.score.toLocaleString('pt-BR')}

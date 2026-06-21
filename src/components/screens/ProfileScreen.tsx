@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
+import { playerTag } from '../../services/leaderboard';
 import { Button } from '../ui/Button';
 
 /** Account profile: email, editable nickname, quick stats, password reset. */
@@ -67,9 +68,16 @@ export function ProfileScreen() {
       <div className="panel stack">
         <div className="account">
           <div className="account__info">
-            <strong>{nickname || user.name}</strong>
+            <strong>
+              {nickname || user.name}
+              <span className="ranking__tag">#{playerTag(user.uid)}</span>
+            </strong>
             <span className="muted" style={{ fontSize: 12 }}>
               {user.email}
+            </span>
+            <span className="muted" style={{ fontSize: 11 }}>
+              Seu ID fixo no ranking: #{playerTag(user.uid)} (não muda quando
+              você troca o apelido)
             </span>
           </div>
         </div>
