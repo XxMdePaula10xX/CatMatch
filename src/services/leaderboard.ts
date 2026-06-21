@@ -232,3 +232,27 @@ export async function getPlayerRank(
 export function isGlobalLeaderboard(): boolean {
   return firebaseEnabled;
 }
+
+/**
+ * Updates the display name on all of a user's existing leaderboard entries, so
+ * changing the nickname is reflected on past scores (not just new ones).
+ */
+export async function renameUserScores(
+  uid: string,
+  name: string,
+): Promise<void> {
+  if (!firebaseEnabled || !uid) return;
+  const db = getDb();
+  if (!db) return;
+  try {
+    const base = collection(db, COLLECTION);
+    // Single-field equality query — no composite index required.
+    const q = query(base, where('uid', '==', uid));
+    const snap = await withTimeout(getDocs(q));
+    await Promise.all(
+      snap.docs.map((d) => setDoc(d.ref, { name }, { merge: true })),
+    );
+  } catch (e) {
+    console.warn('renameUserScores falhou', e);
+  }
+}

@@ -48,7 +48,7 @@ import { soundManager } from '../services/soundManager';
 import { SPECIAL_CATS } from '../data/cats';
 import type { BoosterId } from '../data/boosters';
 import * as storage from '../services/storage';
-import { submitScore } from '../services/leaderboard';
+import { submitScore, renameUserScores } from '../services/leaderboard';
 import {
   onAuthChange,
   signUpWithEmail,
@@ -1102,6 +1102,12 @@ export const useGameStore = create<GameState>((set, get) => {
       storage.saveNickname(clean);
       set({ nickname: clean });
       cloudPush();
+      // Reflect the new name on existing leaderboard entries (and locally).
+      const user = get().user;
+      if (clean && user) {
+        void renameUserScores(user.uid, clean);
+        set({ user: { ...user, name: clean } });
+      }
     },
 
     tick: () => {
