@@ -1,4 +1,4 @@
-import type { Board, Position } from './types';
+import type { Board, CatType, Position } from './types';
 import { makeEmptyTile } from './boardGenerator';
 import { inBounds, neighbors } from './utils';
 import { OBSTACLES } from '../data/obstacles';
@@ -44,6 +44,8 @@ export function findYarnActivations(
 export interface YarnRollResult {
   cleared: Position[];
   path: Position[];
+  /** Cat types of the cats cleared along the way (for collect objectives). */
+  clearedCats: CatType[];
 }
 
 /**
@@ -78,6 +80,7 @@ export function activateYarnBall(
 
   const cleared: Position[] = [];
   const path: Position[] = [];
+  const clearedCats: CatType[] = [];
 
   // The yarn leaves its own cell.
   board[yarn.row][yarn.col] = makeEmptyTile(yarn.row, yarn.col);
@@ -102,6 +105,7 @@ export function activateYarnBall(
     // Clear a cat in the path (empty cells are simply passed over).
     path.push({ row: r, col: c });
     if (tile.type === 'cat') {
+      if (tile.catType) clearedCats.push(tile.catType);
       board[r][c] = makeEmptyTile(r, c);
       cleared.push({ row: r, col: c });
     }
@@ -109,5 +113,5 @@ export function activateYarnBall(
     c += dCol;
   }
 
-  return { cleared, path };
+  return { cleared, path, clearedCats };
 }

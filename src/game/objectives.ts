@@ -64,8 +64,8 @@ export function checkLoseCondition(
 }
 
 /**
- * Star rating for a completed level: 1 star for finishing, +1 if more than a
- * third of the moves remained, +1 if more than two thirds remained.
+ * Star rating for a completed level: 1 star for finishing, 2 if at least a
+ * quarter of the moves remained, 3 if at least half remained.
  */
 export function computeStars(movesLeft: number, totalMoves: number): number {
   if (totalMoves <= 0) return 1;

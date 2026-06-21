@@ -100,11 +100,19 @@ export async function submitScore(params: SubmitParams): Promise<void> {
   if (firebaseEnabled && entry.uid) {
     const db = getDb();
     if (db) {
-      const ref = doc(db, COLLECTION, `${entry.uid}_${entry.board}_${periodId}`);
-      const snap = await getDoc(ref);
-      const prev = snap.exists() ? (snap.data().score as number) : 0;
-      if (entry.score > prev) {
-        await setDoc(ref, { ...entry, updatedAt: serverTimestamp() });
+      try {
+        const ref = doc(
+          db,
+          COLLECTION,
+          `${entry.uid}_${entry.board}_${periodId}`,
+        );
+        const snap = await getDoc(ref);
+        const prev = snap.exists() ? (snap.data().score as number) : 0;
+        if (entry.score > prev) {
+          await setDoc(ref, { ...entry, updatedAt: serverTimestamp() });
+        }
+      } catch (e) {
+        console.warn('submitScore falhou', e);
       }
       return;
     }
@@ -146,26 +154,32 @@ export async function getTopScores(
   if (firebaseEnabled) {
     const db = getDb();
     if (db) {
-      const base = collection(db, COLLECTION);
-      const q = params.board
-        ? query(
-            base,
-            where('board', '==', params.board),
-            where('periodId', '==', periodId),
-            orderBy('score', 'desc'),
-            limit(max),
-          )
-        : query(
-            base,
-            where('periodId', '==', periodId),
-            where('scope', '==', 'weekly'),
-            orderBy('score', 'desc'),
-            limit(max * 2),
-          );
-      const snap = await getDocs(q);
-      let rows = snap.docs.map((d) => d.data() as LeaderEntry);
-      if (!params.board) rows = dedupeByUser(rows);
-      return rows.sort((a, b) => b.score - a.score).slice(0, max);
+      try {
+        const base = collection(db, COLLECTION);
+        const q = params.board
+          ? query(
+              base,
+              where('board', '==', params.board),
+              where('periodId', '==', periodId),
+              orderBy('score', 'desc'),
+              limit(max),
+            )
+          : query(
+              base,
+              where('periodId', '==', periodId),
+              where('scope', '==', 'weekly'),
+              orderBy('score', 'desc'),
+              limit(max * 2),
+            );
+        const snap = await getDocs(q);
+        let rows = snap.docs.map((d) => d.data() as LeaderEntry);
+        if (!params.board) rows = dedupeByUser(rows);
+        return rows.sort((a, b) => b.score - a.score).slice(0, max);
+      } catch (e) {
+        // Missing composite index / offline — don't leave the UI hanging.
+        console.warn('getTopScores falhou (verifique índices do Firestore)', e);
+        return [];
+      }
     }
   }
 
@@ -186,13 +200,15 @@ export async function getPlayerRank(
   myScore: number,
 ): Promise<number | null> {
   if (myScore <= 0) return null;
+  // Exact rank needs a single board to count against; the "Geral" (no board)
+  // view aggregates per-user bests, so we skip the pinned row there in all
+  // modes for consistency.
+  if (!params.board) return null;
   const periodId = periodFor(params.scope);
 
   if (firebaseEnabled) {
     const db = getDb();
-    // Exact rank needs a single board to count; "Geral" (no board) can't be
-    // ranked cheaply, so we skip the pinned row there.
-    if (!db || !params.board) return null;
+    if (!db) return null;
     try {
       const base = collection(db, COLLECTION);
       const q = query(
@@ -208,9 +224,9 @@ export async function getPlayerRank(
     }
   }
 
-  let entries = readLocal().filter((e) => e.periodId === periodId);
-  if (params.board) entries = entries.filter((e) => e.board === params.board);
-  else entries = dedupeByUser(entries.filter((e) => e.scope === 'weekly'));
+  const entries = readLocal().filter(
+    (e) => e.periodId === periodId && e.board === params.board,
+  );
   const higher = entries.filter((e) => e.score > myScore).length;
   return higher + 1;
 }

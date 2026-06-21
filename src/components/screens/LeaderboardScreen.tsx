@@ -67,8 +67,12 @@ export function LeaderboardScreen() {
     setEntries(null);
     setMyRank(null);
     const params = paramsFor(filter);
-    getTopScores(params).then((rows) => active && setEntries(rows));
-    getPlayerRank(params, myScore).then((r) => active && setMyRank(r));
+    getTopScores(params)
+      .then((rows) => active && setEntries(rows))
+      .catch(() => active && setEntries([]));
+    getPlayerRank(params, myScore)
+      .then((r) => active && setMyRank(r))
+      .catch(() => active && setMyRank(null));
     return () => {
       active = false;
     };

@@ -121,6 +121,13 @@
   animation: pop-big 0.5s ease;
   transform: scale(1.3);
 }
+.boss--excited .boss__cat {
+  transform: scale(1.15);
+}
+.boss--backToSleep .boss__cat {
+  transition: transform 0.3s ease;
+  transform: scale(1);
+}
 @keyframes shake {
   0%,
   100% {
@@ -793,19 +800,6 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
-}
-.account__avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-  flex: 0 0 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  background: var(--panel-2);
-  border: 3px solid var(--border);
-  object-fit: cover;
 }
 .account__info {
   flex: 1;

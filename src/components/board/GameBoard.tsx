@@ -72,6 +72,11 @@ export function GameBoard() {
     drag.current = null;
   }
 
+  // Pointer leaving the board mid-gesture cancels it (don't treat as a tap).
+  function handlePointerLeave() {
+    drag.current = null;
+  }
+
   const isSelected = (r: number, c: number) =>
     !!selected && selected.row === r && selected.col === c;
   const isHint = (r: number, c: number) =>
@@ -85,7 +90,7 @@ export function GameBoard() {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
       >
         {board.map((row, r) =>
           row.map((_, c) => (

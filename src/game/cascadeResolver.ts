@@ -113,11 +113,15 @@ export function resolveMatchStep(
     personality.extraObstacleDamage,
   );
 
-  // 5. Yarn balls adjacent to matches roll and clear their path.
+  // 5. Yarn balls adjacent to any cleared cell (incl. special-expanded) roll.
   let yarnsActivated = 0;
-  const yarnActs = findYarnActivations(board, result.matchedPositions);
+  const yarnActs = findYarnActivations(board, allMatched);
   for (const act of yarnActs) {
-    activateYarnBall(board, act.yarn, act.trigger);
+    const roll = activateYarnBall(board, act.yarn, act.trigger);
+    // Count cats swept up by the yarn toward collect objectives.
+    for (const cat of roll.clearedCats) {
+      catsCollected[cat] = (catsCollected[cat] ?? 0) + 1;
+    }
     yarnsActivated += 1;
   }
 

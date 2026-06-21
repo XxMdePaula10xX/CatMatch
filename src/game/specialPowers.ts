@@ -1,7 +1,6 @@
 import type { Board, CatType, Position, Tile } from './types';
 import { inBounds, randomItem } from './utils';
 import { CAT_TYPES } from '../data/cats';
-import { applyObstacleDamage } from './obstacleLogic';
 
 function key(p: Position): string {
   return `${p.row},${p.col}`;
@@ -73,12 +72,14 @@ export function applySpecialActivations(
         add(areaCells(board, pos, 1));
         break;
       case 'magician': {
-        // Transform up to 5 random cats into one random type.
+        // Transform up to 5 random cats into one type (excluding cats already
+        // of that type, so the effect is always visible).
         const target = randomItem(CAT_TYPES) as CatType;
         const cats: Tile[] = [];
         for (const row of board) {
           for (const t of row) {
-            if (t.type === 'cat' && !matched.has(key(t))) cats.push(t);
+            if (t.type === 'cat' && t.catType !== target && !matched.has(key(t)))
+              cats.push(t);
           }
         }
         for (let i = 0; i < 5 && cats.length > 0; i++) {
@@ -90,17 +91,10 @@ export function applySpecialActivations(
         break;
       }
       case 'lucky': {
-        // Damages the nearest obstacle if there is one; otherwise clears the
-        // surrounding 3x3 of cats. (Lucky/Sleepy are spawn-only specials.)
-        const obstacle = board
-          .flat()
-          .find((t) => t.type === 'obstacle' && t.obstacleType !== 'bed');
-        if (obstacle) {
-          applyObstacleDamage(board, [pos]);
-          add(areaCells(board, pos, 1));
-        } else {
-          add(areaCells(board, pos, 1));
-        }
+        // Clears the surrounding 3x3 of cats; obstacles adjacent to those cells
+        // take damage in the resolver's obstacle step (counted there).
+        // (Lucky/Sleepy are spawn-only specials.)
+        add(areaCells(board, pos, 1));
         break;
       }
     }

@@ -176,6 +176,8 @@ interface GameState {
 let floatId = 0;
 let toastId = 0;
 let particleId = 0;
+/** Wall-clock timestamp of the last timer tick (for drift-free elapsed time). */
+let lastTickTs = Date.now();
 
 function recomputeObjectives(
   level: Level,
@@ -445,9 +447,11 @@ export const useGameStore = create<GameState>((set, get) => {
     const needsReshuffle = () =>
       findMatches(board).matchedPositions.length > 0 || !findHint(board);
     let guard = 0;
-    while (needsReshuffle() && guard < 40) {
-      const catTiles = board.flat().filter((t) => t.type === 'cat');
-      for (const t of catTiles)
+    while (needsReshuffle() && guard < 60) {
+      const movable = board
+        .flat()
+        .filter((t) => t.type === 'cat' || t.type === 'specialCat');
+      for (const t of movable)
         t.catType = cats[Math.floor(Math.random() * cats.length)];
       guard += 1;
     }
@@ -663,6 +667,7 @@ export const useGameStore = create<GameState>((set, get) => {
   }
 
   function beginLevel(level: Level, opts: BeginOpts = {}) {
+    lastTickTs = Date.now();
     const mode = opts.mode ?? 'normal';
     const saved = opts.saved;
     const progress = saved ? saved.progress : createProgress();
@@ -709,6 +714,7 @@ export const useGameStore = create<GameState>((set, get) => {
 
   // ---- Adventure (roguelite) ----
   function beginAdventureFloor(depth: number) {
+    lastTickTs = Date.now();
     const mods = get().relicMods;
     const level = makeAdventureFloor(depth, mods.yarnsPerFloor);
     const progress = createProgress();
@@ -824,6 +830,9 @@ export const useGameStore = create<GameState>((set, get) => {
       }
       set(patch);
 
+      const cloud = await loadCloudSave(user.uid);
+      // Re-read state AFTER the await so progress earned during the load isn't
+      // lost when we merge.
       const s = get();
       const local: CloudData = {
         unlockedLevel: s.unlockedLevel,
@@ -832,7 +841,6 @@ export const useGameStore = create<GameState>((set, get) => {
         stats: s.stats,
         achievements: s.achievements,
       };
-      const cloud = await loadCloudSave(user.uid);
       const merged = cloud ? mergeCloud(local, cloud) : local;
       storage.saveMeta({
         unlockedLevel: merged.unlockedLevel,
@@ -1065,7 +1073,7 @@ export const useGameStore = create<GameState>((set, get) => {
     },
 
     setNickname: (name: string) => {
-      const clean = name.slice(0, 18);
+      const clean = name.trim().slice(0, 18);
       storage.saveNickname(clean);
       set({ nickname: clean });
       cloudPush();
@@ -1075,9 +1083,16 @@ export const useGameStore = create<GameState>((set, get) => {
       const s = get();
       if (s.screen !== 'game' || s.status !== 'playing') return;
       // Freeze the clock during cascade animations so it stays fair (and the
-      // win-time multiplier isn't eaten by long combos).
-      if (s.isResolving) return;
-      const next = s.elapsedMs + 1000;
+      // win-time multiplier isn't eaten by long combos). Use real elapsed time
+      // between ticks so background-tab throttling doesn't skew the timer.
+      const now = Date.now();
+      if (s.isResolving) {
+        lastTickTs = now;
+        return;
+      }
+      const delta = Math.min(Math.max(now - lastTickTs, 0), 5000);
+      lastTickTs = now;
+      const next = s.elapsedMs + delta;
       set({ elapsedMs: next });
       if (s.mode === 'blitz' && next >= BLITZ_DURATION_MS) {
         endScoreMode();

@@ -51,7 +51,7 @@ export function GameScreen() {
           <ScoreCounter />
         </div>
         {objectives.map((o, i) => (
-          <ObjectiveCard key={i} objective={o} />
+          <ObjectiveCard key={`${o.type}-${o.catType ?? ''}-${i}`} objective={o} />
         ))}
         {bossActive && <BossCatMeter />}
         {isAdventure && advRelics.length > 0 && (

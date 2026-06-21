@@ -83,7 +83,18 @@ export function saveHighScores(scores: Record<number, number>): void {
 
 // ---- Saved (resumable) game ----
 export function loadSavedGame(): SavedGame | null {
-  return read<SavedGame | null>(KEYS.savedGame, null);
+  const g = read<SavedGame | null>(KEYS.savedGame, null);
+  // Validate required fields so a legacy/corrupt save can't crash resume.
+  if (
+    !g ||
+    typeof g.levelId !== 'number' ||
+    !Array.isArray(g.board) ||
+    !g.progress ||
+    typeof g.movesLeft !== 'number'
+  ) {
+    return null;
+  }
+  return g;
 }
 export function saveSavedGame(game: SavedGame): void {
   write(KEYS.savedGame, game);

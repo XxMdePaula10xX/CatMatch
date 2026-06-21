@@ -22,7 +22,7 @@ export function DefeatModal() {
       <p className="muted">Faltou pouco para cuidar de todos os gatinhos…</p>
       <div className="stack" style={{ margin: '12px 0' }}>
         {remaining.map((o, i) => (
-          <ObjectiveCard key={i} objective={o} />
+          <ObjectiveCard key={`${o.type}-${o.catType ?? ''}-${i}`} objective={o} />
         ))}
       </div>
       <div className="stack">
