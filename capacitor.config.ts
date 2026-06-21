@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  */
 const config: CapacitorConfig = {
   appId: 'com.matheus.catmatch',
-  appName: 'Cat Match',
+  appName: 'CatMatch3',
   webDir: 'dist',
   backgroundColor: '#FFF4DC',
   ios: {
