@@ -6,6 +6,7 @@ import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
 import { AchievementsScreen } from './components/screens/AchievementsScreen';
 import { RelicSelectScreen } from './components/screens/RelicSelectScreen';
 import { AuthScreen } from './components/screens/AuthScreen';
+import { ProfileScreen } from './components/screens/ProfileScreen';
 import { TutorialOverlay } from './components/ui/TutorialOverlay';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
       {screen === 'achievements' && <AchievementsScreen />}
       {screen === 'relicSelect' && <RelicSelectScreen />}
       {screen === 'auth' && <AuthScreen />}
+      {screen === 'profile' && <ProfileScreen />}
       {showTutorial && <TutorialOverlay />}
     </div>
   );

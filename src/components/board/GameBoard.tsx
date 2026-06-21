@@ -1,8 +1,8 @@
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Tile } from './Tile';
 import { Particles } from './Particles';
-import type { Position } from '../../game/types';
+import type { Board, Position } from '../../game/types';
 
 interface DragStart {
   row: number;
@@ -11,6 +11,75 @@ interface DragStart {
   y: number;
   triggered: boolean;
 }
+
+/** Static checkered backdrop — memoized so FX updates never re-render it. */
+const BoardCells = memo(function BoardCells({
+  rows,
+  cols,
+}: {
+  rows: number;
+  cols: number;
+}) {
+  const cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push(
+        <div
+          key={`cell-${r}-${c}`}
+          className={`board__cell ${(r + c) % 2 === 0 ? 'dark' : ''}`}
+          style={{
+            left: `calc(${c} * (100% / ${cols}))`,
+            top: `calc(${r} * (100% / ${rows}))`,
+            width: `calc(100% / ${cols})`,
+            height: `calc(100% / ${rows})`,
+          }}
+        />,
+      );
+    }
+  }
+  return <>{cells}</>;
+});
+
+/**
+ * The tile layer. Memoized so that frequent FX state (particles, floating
+ * scores, toasts, combo/shake) doesn't recreate 64 tiles every update — it only
+ * re-renders when the board, selection, or hint actually change.
+ */
+const TilesLayer = memo(function TilesLayer({
+  board,
+  rows,
+  cols,
+  selected,
+  hintCells,
+}: {
+  board: Board;
+  rows: number;
+  cols: number;
+  selected: Position | null;
+  hintCells: Position[] | null;
+}) {
+  const isSelected = (r: number, c: number) =>
+    !!selected && selected.row === r && selected.col === c;
+  const isHint = (r: number, c: number) =>
+    !!hintCells?.some((h) => h.row === r && h.col === c);
+
+  return (
+    <>
+      {board.flat().map((tile) =>
+        tile.type === 'empty' ? null : (
+          <Tile
+            key={tile.id}
+            tile={tile}
+            rows={rows}
+            cols={cols}
+            selected={isSelected(tile.row, tile.col)}
+            hint={isHint(tile.row, tile.col)}
+          />
+        ),
+      )}
+    </>
+  );
+});
 
 /** The 8x8 playfield: checkered backdrop, animated tiles, and FX overlays. */
 export function GameBoard() {
@@ -77,11 +146,6 @@ export function GameBoard() {
     drag.current = null;
   }
 
-  const isSelected = (r: number, c: number) =>
-    !!selected && selected.row === r && selected.col === c;
-  const isHint = (r: number, c: number) =>
-    !!hintCells?.some((h) => h.row === r && h.col === c);
-
   return (
     <div className={`board-wrap ${shakeLevel >= 3 ? 'shake' : ''}`}>
       <div
@@ -92,33 +156,15 @@ export function GameBoard() {
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
       >
-        {board.map((row, r) =>
-          row.map((_, c) => (
-            <div
-              key={`cell-${r}-${c}`}
-              className={`board__cell ${(r + c) % 2 === 0 ? 'dark' : ''}`}
-              style={{
-                left: `calc(${c} * (100% / ${cols}))`,
-                top: `calc(${r} * (100% / ${rows}))`,
-                width: `calc(100% / ${cols})`,
-                height: `calc(100% / ${rows})`,
-              }}
-            />
-          )),
-        )}
+        <BoardCells rows={rows} cols={cols} />
 
-        {board.flat().map((tile) =>
-          tile.type === 'empty' ? null : (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              rows={rows}
-              cols={cols}
-              selected={isSelected(tile.row, tile.col)}
-              hint={isHint(tile.row, tile.col)}
-            />
-          ),
-        )}
+        <TilesLayer
+          board={board}
+          rows={rows}
+          cols={cols}
+          selected={selected}
+          hintCells={hintCells}
+        />
 
         {floaters.map((f) => (
           <div

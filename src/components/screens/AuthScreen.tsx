@@ -8,13 +8,27 @@ export function AuthScreen() {
   const goHome = useGameStore((s) => s.goHome);
   const signInEmail = useGameStore((s) => s.signInEmail);
   const signUpEmail = useGameStore((s) => s.signUpEmail);
+  const resetPassword = useGameStore((s) => s.resetPassword);
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  async function forgotPassword() {
+    setError(null);
+    setInfo(null);
+    if (!email.trim())
+      return setError('Digite seu e-mail acima para redefinir a senha.');
+    setBusy(true);
+    const err = await resetPassword(email);
+    setBusy(false);
+    if (err) setError(err);
+    else setInfo(`Enviamos um link de redefinição para ${email.trim()}.`);
+  }
 
   const isSignup = mode === 'signup';
 
@@ -120,10 +134,22 @@ export function AuthScreen() {
         )}
 
         {error && <p className="auth-error">⚠️ {error}</p>}
+        {info && <p className="auth-ok">✅ {info}</p>}
 
         <Button variant="green" block disabled={busy} onClick={submit}>
           {busy ? '...' : isSignup ? 'Criar conta 🐾' : 'Entrar ▶'}
         </Button>
+
+        {!isSignup && (
+          <button
+            type="button"
+            className="auth-link"
+            disabled={busy}
+            onClick={forgotPassword}
+          >
+            Esqueci minha senha
+          </button>
+        )}
 
         <p className="muted center" style={{ fontSize: 12, margin: 0 }}>
           {isSignup

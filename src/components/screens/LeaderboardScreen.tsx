@@ -40,7 +40,7 @@ export function LeaderboardScreen() {
   const authReady = useGameStore((s) => s.authReady);
   const authAvailable = useGameStore((s) => s.authAvailable);
   const goAuth = useGameStore((s) => s.goAuth);
-  const signOut = useGameStore((s) => s.signOut);
+  const goProfile = useGameStore((s) => s.goProfile);
   const highScores = useGameStore((s) => s.highScores);
 
   const [filter, setFilter] = useState<Filter>('all');
@@ -119,8 +119,8 @@ export function LeaderboardScreen() {
                   🌍 Conectado · ranking global
                 </span>
               </div>
-              <Button variant="ghost" small onClick={signOut}>
-                Sair
+              <Button variant="ghost" small onClick={goProfile}>
+                👤 Perfil
               </Button>
             </div>
             <NickRow {...{ name, setName, nickname, setNickname }} />

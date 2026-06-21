@@ -4,10 +4,7 @@ import {
   getDoc,
   setDoc,
   getDocs,
-  getCountFromServer,
   query,
-  orderBy,
-  limit,
   where,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -165,29 +162,21 @@ export async function getTopScores(
     const db = getDb();
     if (db) {
       try {
+        // Single equality filter (no orderBy) so Firestore serves it from the
+        // automatic single-field index — no composite index to create. We
+        // filter the board and sort by score on the client.
         const base = collection(db, COLLECTION);
-        const q = params.board
-          ? query(
-              base,
-              where('board', '==', params.board),
-              where('periodId', '==', periodId),
-              orderBy('score', 'desc'),
-              limit(max),
-            )
-          : query(
-              base,
-              where('periodId', '==', periodId),
-              where('scope', '==', 'weekly'),
-              orderBy('score', 'desc'),
-              limit(max * 2),
-            );
+        const q = query(base, where('periodId', '==', periodId));
         const snap = await withTimeout(getDocs(q));
         let rows = snap.docs.map((d) => d.data() as LeaderEntry);
-        if (!params.board) rows = dedupeByUser(rows);
+        if (params.board) {
+          rows = rows.filter((e) => e.board === params.board);
+        } else {
+          rows = dedupeByUser(rows.filter((e) => e.scope === 'weekly'));
+        }
         return rows.sort((a, b) => b.score - a.score).slice(0, max);
       } catch (e) {
-        // Missing composite index / offline — don't leave the UI hanging.
-        console.warn('getTopScores falhou (verifique índices do Firestore)', e);
+        console.warn('getTopScores falhou', e);
         return [];
       }
     }
@@ -220,15 +209,14 @@ export async function getPlayerRank(
     const db = getDb();
     if (!db) return null;
     try {
+      // Single-field query (no composite index); count higher scores client-side.
       const base = collection(db, COLLECTION);
-      const q = query(
-        base,
-        where('board', '==', params.board),
-        where('periodId', '==', periodId),
-        where('score', '>', myScore),
-      );
-      const snap = await withTimeout(getCountFromServer(q));
-      return snap.data().count + 1;
+      const q = query(base, where('periodId', '==', periodId));
+      const snap = await withTimeout(getDocs(q));
+      const higher = snap.docs
+        .map((d) => d.data() as LeaderEntry)
+        .filter((e) => e.board === params.board && e.score > myScore).length;
+      return higher + 1;
     } catch {
       return null;
     }

@@ -54,6 +54,7 @@ import {
   signUpWithEmail,
   signInWithEmail,
   signOutUser,
+  resetPassword as resetPasswordEmail,
   authErrorMessage,
   authAvailable,
   type AppUser,
@@ -154,6 +155,7 @@ interface GameState {
   goLeaderboard: () => void;
   goAchievements: () => void;
   goAuth: () => void;
+  goProfile: () => void;
   startLevel: (id: number) => void;
   startDaily: () => void;
   startBlitz: () => void;
@@ -177,6 +179,7 @@ interface GameState {
     nickname: string,
   ) => Promise<string | null>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<string | null>;
 }
 
 let floatId = 0;
@@ -950,6 +953,10 @@ export const useGameStore = create<GameState>((set, get) => {
       soundManager.play('button');
       set({ screen: 'auth' });
     },
+    goProfile: () => {
+      soundManager.play('button');
+      set({ screen: 'profile' });
+    },
 
     startLevel: (id: number) => {
       const level = getLevel(id);
@@ -1141,7 +1148,15 @@ export const useGameStore = create<GameState>((set, get) => {
     signOut: async () => {
       soundManager.play('button');
       await signOutUser();
-      set({ user: null });
+      set({ user: null, screen: 'leaderboard' });
+    },
+    resetPassword: async (email: string) => {
+      try {
+        await resetPasswordEmail(email.trim());
+        return null;
+      } catch (e) {
+        return authErrorMessage(e);
+      }
     },
   };
 });

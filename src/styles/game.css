@@ -343,15 +343,10 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 .tile.special .tile__inner {
-  box-shadow: 0 0 0 3px var(--yellow), inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-    0 3px 6px rgba(0, 0, 0, 0.25);
-  animation: special-shine 1.8s ease infinite;
-}
-@keyframes special-shine {
-  50% {
-    box-shadow: 0 0 0 3px #fff0a8, inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-      0 0 12px 2px var(--yellow);
-  }
+  /* Static ring (no infinite box-shadow animation — that repaints every frame
+     and hurts scrolling/gameplay smoothness on mobile). */
+  box-shadow: 0 0 0 3px var(--yellow), 0 0 10px 1px var(--yellow),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.25);
 }
 
 /* yarn + obstacle look */
@@ -849,6 +844,43 @@
   font-size: 13px;
   margin: 0;
   text-align: center;
+}
+.auth-ok {
+  color: var(--green-dark, #3a7d23);
+  font-weight: 800;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--purple);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ---------- Profile ---------- */
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  gap: 8px;
+}
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.profile-stat__num {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--brown);
 }
 
 /* ---------- Leaderboard ---------- */
