@@ -106,8 +106,9 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
-        # submit_to_app_store: false  # flip to true when ready for review
+        # Just upload to App Store Connect. Internal TestFlight testing works
+        # immediately (no beta review). To auto-submit to EXTERNAL TestFlight
+        # later, set submit_to_testflight: true and configure a beta group.
 
   # Android is buildable without a Mac too (handy for quick public testing).
   android-release:
