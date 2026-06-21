@@ -95,13 +95,14 @@ export type Screen =
   | 'levelSelect'
   | 'game'
   | 'leaderboard'
-  | 'achievements';
+  | 'achievements'
+  | 'relicSelect';
 
 export type GameStatus = 'playing' | 'won' | 'lost' | 'finished';
 
-/** Play modes. `normal` is the level campaign; `daily` and `blitz` are
- *  score-attack modes. */
-export type GameMode = 'normal' | 'daily' | 'blitz';
+/** Play modes. `normal` is the level campaign; `daily`/`blitz` are score-attack;
+ *  `adventure` is the roguelite run with relics. */
+export type GameMode = 'normal' | 'daily' | 'blitz' | 'adventure';
 
 export type BossState =
   | 'sleeping'

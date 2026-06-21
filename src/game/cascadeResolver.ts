@@ -15,6 +15,13 @@ import {
 import { makeEmptyTile } from './boardGenerator';
 import { nextId } from './utils';
 
+/** Optional relic/score modifiers (Adventure mode). */
+export interface StepMods {
+  scoreMult?: number;
+  catBonus?: Partial<Record<CatType, number>>;
+  comboTierBonus?: number;
+}
+
 export interface StepResult {
   hadMatches: boolean;
   clearedPositions: Position[];
@@ -63,6 +70,7 @@ function emptyStep(): StepResult {
 export function resolveMatchStep(
   board: Board,
   cascadeLevel: number,
+  mods?: StepMods,
 ): StepResult {
   const result = findMatches(board);
   if (result.matchedPositions.length === 0) return emptyStep();
@@ -122,14 +130,23 @@ export function resolveMatchStep(
   bossEnergyGained += personality.bossBonus;
 
   // 7. Score (match score scaled by cascade multiplier + flat bonuses).
-  const multiplier = comboMultiplier(cascadeLevel);
-  const matchBase =
+  // Relic mods (Adventure) bump the combo tier, add per-cat bonuses, and apply
+  // a global multiplier.
+  const comboTierBonus = mods?.comboTierBonus ?? 0;
+  const scoreMult = mods?.scoreMult ?? 1;
+  const catBonus = mods?.catBonus ?? {};
+  const multiplier = comboMultiplier(cascadeLevel + comboTierBonus);
+  let matchBase =
     basePerGroup.reduce((a, b) => a + b, 0) + personality.scoreBonus;
+  result.groups.forEach((g, idx) => {
+    const bonus = catBonus[g.catType];
+    if (bonus) matchBase += basePerGroup[idx] * bonus;
+  });
   const matchScore = Math.round(matchBase * multiplier);
   const extraScore =
     obs.obstaclesDestroyed * SCORE.obstacleDestroyed +
     yarnsActivated * SCORE.yarnActivated;
-  const scoreGained = matchScore + extraScore;
+  const scoreGained = Math.round((matchScore + extraScore) * scoreMult);
 
   // 8. Clear matched cells, leaving room for created specials.
   const creationByKey = new Map(

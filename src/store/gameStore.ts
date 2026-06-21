@@ -15,9 +15,17 @@ import {
   levels,
   getLevel,
   makeDailyLevel,
+  makeAdventureFloor,
   BLITZ_LEVEL,
   BLITZ_DURATION_MS,
+  ADVENTURE_LEVEL_ID,
 } from '../data/levels';
+import {
+  aggregateRelics,
+  offerRelics,
+  emptyEffects,
+  type RelicEffects,
+} from '../data/relics';
 import { createBoard, makeEmptyTile, type Rng } from '../game/boardGenerator';
 import { cloneBoard, delay, forEachTile, inBounds } from '../game/utils';
 import { mulberry32, hashString } from '../game/random';
@@ -127,6 +135,18 @@ interface GameState {
   stats: Stats;
   achievements: string[];
 
+  // adventure (roguelite) run state
+  advDepth: number;
+  advRelics: string[];
+  advTotalScore: number;
+  relicMods: RelicEffects;
+  relicChoices: string[];
+  advFreeLeft: number;
+
+  // tutorial
+  tutorialSeen: boolean;
+  showTutorial: boolean;
+
   // ----- actions -----
   goHome: () => void;
   goLevelSelect: () => void;
@@ -135,9 +155,13 @@ interface GameState {
   startLevel: (id: number) => void;
   startDaily: () => void;
   startBlitz: () => void;
+  startAdventure: () => void;
+  chooseRelic: (id: string) => void;
   restartLevel: () => void;
   nextLevel: () => void;
   resumeGame: () => void;
+  openTutorial: () => void;
+  closeTutorial: () => void;
   onTileClick: (pos: Position) => void;
   onTileDrag: (from: Position, to: Position) => void;
   selectBooster: (id: BoosterId) => void;
@@ -336,6 +360,14 @@ export const useGameStore = create<GameState>((set, get) => {
     const state = get();
     const level = state.level!;
     const progress = state.progress;
+    const mods =
+      state.mode === 'adventure'
+        ? {
+            scoreMult: state.relicMods.scoreMult,
+            catBonus: state.relicMods.catBonus,
+            comboTierBonus: state.relicMods.comboTierBonus,
+          }
+        : undefined;
     let cascadeLevel = 0;
     let bossEnergy = state.bossEnergy;
     let guard = 0;
@@ -354,7 +386,7 @@ export const useGameStore = create<GameState>((set, get) => {
       for (const p of matches.matchedPositions) board[p.row][p.col].isMatched = true;
       await commit(board, T.pop);
 
-      const step = resolveMatchStep(board, cascadeLevel);
+      const step = resolveMatchStep(board, cascadeLevel, mods);
       if (step.yarnsActivated > 0) {
         soundManager.play('yarn');
         addToast('🧶 Novelo rolando!');
@@ -456,6 +488,12 @@ export const useGameStore = create<GameState>((set, get) => {
     const level = state.level!;
     const progress = state.progress;
 
+    // Adventure: win -> relic choice; out of moves -> end run.
+    if (state.mode === 'adventure') {
+      handleAdventureFinish(board);
+      return;
+    }
+
     // Score-attack modes have no objectives — they end by moves/time.
     if (state.mode !== 'normal') {
       if (state.mode === 'daily' && state.movesLeft <= 0) {
@@ -487,6 +525,12 @@ export const useGameStore = create<GameState>((set, get) => {
       const unlocked = Math.max(state.unlockedLevel, level.id + 1);
       storage.saveMeta({ unlockedLevel: unlocked, stars: newStars });
       storage.clearSavedGame();
+      // DDA: a win resets the level's fail counter.
+      const attemptsW = storage.loadAttempts();
+      if (attemptsW[level.id]) {
+        delete attemptsW[level.id];
+        storage.saveAttempts(attemptsW);
+      }
       updateStats((st) => {
         st.wins += 1;
         st.bestScore = Math.max(st.bestScore, progress.score);
@@ -522,6 +566,10 @@ export const useGameStore = create<GameState>((set, get) => {
 
     if (lost) {
       storage.clearSavedGame();
+      // DDA: record the loss so the next attempt grants bonus moves.
+      const attemptsL = storage.loadAttempts();
+      attemptsL[level.id] = { fails: (attemptsL[level.id]?.fails ?? 0) + 1 };
+      storage.saveAttempts(attemptsL);
       soundManager.play('defeat');
       set({ status: 'lost', objectives, savedGameExists: false, isResolving: false });
       return;
@@ -549,7 +597,13 @@ export const useGameStore = create<GameState>((set, get) => {
       return;
     }
 
-    if (get().mode !== 'blitz') set({ movesLeft: get().movesLeft - 1 });
+    const m = get().mode;
+    if (m === 'adventure' && get().advFreeLeft > 0) {
+      set({ advFreeLeft: get().advFreeLeft - 1 });
+      addToast('🆓 Jogada grátis!');
+    } else if (m !== 'blitz') {
+      set({ movesLeft: get().movesLeft - 1 });
+    }
     await resolveCascades(board);
     finishMove(board);
   }
@@ -612,13 +666,21 @@ export const useGameStore = create<GameState>((set, get) => {
     const mode = opts.mode ?? 'normal';
     const saved = opts.saved;
     const progress = saved ? saved.progress : createProgress();
+    // Adaptive difficulty: grant bonus moves after repeated losses (normal mode).
+    let ddaBonus = 0;
+    if (!saved && mode === 'normal') {
+      const fails = storage.loadAttempts()[level.id]?.fails ?? 0;
+      ddaBonus = Math.min(fails, 3) * 2;
+    }
+    const moves = saved ? saved.movesLeft : level.moves + ddaBonus;
+    const total = saved ? saved.totalMoves : level.moves + ddaBonus;
     set({
       screen: 'game',
       mode,
       level,
       board: saved ? saved.board : createBoard(level.boardConfig, opts.rng),
-      movesLeft: saved ? saved.movesLeft : level.moves,
-      totalMoves: saved ? saved.totalMoves : level.moves,
+      movesLeft: moves,
+      totalMoves: total,
       score: saved ? saved.score : 0,
       progress,
       objectives: recomputeObjectives(level, progress),
@@ -639,8 +701,112 @@ export const useGameStore = create<GameState>((set, get) => {
       boosterUses: saved
         ? saved.boosterUses
         : { pawBomb: BOOSTER_START, laser: BOOSTER_START },
+      advFreeLeft: 0,
     });
     if (saved) set({ savedGameExists: true });
+    if (ddaBonus > 0) addToast(`🐾 +${ddaBonus} movimentos extras!`);
+  }
+
+  // ---- Adventure (roguelite) ----
+  function beginAdventureFloor(depth: number) {
+    const mods = get().relicMods;
+    const level = makeAdventureFloor(depth, mods.yarnsPerFloor);
+    const progress = createProgress();
+    const moves = level.moves + mods.extraMoves;
+    set({
+      screen: 'game',
+      mode: 'adventure',
+      level,
+      board: createBoard(level.boardConfig),
+      movesLeft: moves,
+      totalMoves: moves,
+      score: 0,
+      progress,
+      objectives: recomputeObjectives(level, progress),
+      status: 'playing',
+      isResolving: false,
+      elapsedMs: 0,
+      bossActive: !!level.boardConfig.bossCat,
+      bossEnergy: 0,
+      bossState: 'sleeping',
+      selected: null,
+      hintCells: null,
+      floatingScores: [],
+      toasts: [],
+      particles: [],
+      shakeLevel: 0,
+      comboLevel: 0,
+      activeBooster: null,
+      boosterUses: {
+        pawBomb: BOOSTER_START + mods.bonusBoosters,
+        laser: BOOSTER_START + mods.bonusBoosters,
+      },
+      advFreeLeft: mods.freeMoves,
+    });
+    addToast(`🗺️ Andar ${depth} — meta ${level.objectives[0].target} pts`);
+  }
+
+  function endAdventureRun() {
+    const s = get();
+    const total = s.advTotalScore + s.progress.score;
+    const prevBest = s.highScores[ADVENTURE_LEVEL_ID] ?? 0;
+    const highScores = storage.saveHighScore(ADVENTURE_LEVEL_ID, total);
+    updateStats((st) => {
+      st.bestScore = Math.max(st.bestScore, total);
+      st.advBestDepth = Math.max(st.advBestDepth, s.advDepth);
+    });
+    void submitScore({
+      uid: s.user?.uid,
+      name: s.nickname || s.user?.name || 'Jogador',
+      score: total,
+      board: 'adventure',
+      scope: 'weekly',
+    });
+    soundManager.play('defeat');
+    set({
+      status: 'finished',
+      isResolving: false,
+      advTotalScore: total,
+      lastHighScore: total,
+      lastIsRecord: total > prevBest,
+      highScores,
+    });
+    cloudPush();
+  }
+
+  function handleAdventureFinish(board: Board) {
+    const state = get();
+    const level = state.level!;
+    const progress = state.progress;
+    const won = checkWinCondition(level.objectives, progress);
+
+    if (won) {
+      const total = state.advTotalScore + progress.score;
+      updateStats((st) => {
+        st.bestScore = Math.max(st.bestScore, progress.score);
+      });
+      soundManager.play('victory');
+      set({
+        advTotalScore: total,
+        relicChoices: offerRelics(3),
+        screen: 'relicSelect',
+        isResolving: false,
+      });
+      return;
+    }
+
+    if (state.movesLeft <= 0) {
+      endAdventureRun();
+      return;
+    }
+
+    ensureSolvable(board, level.boardConfig.availableCats);
+    set({
+      board: cloneBoard(board),
+      score: progress.score,
+      objectives: recomputeObjectives(level, progress),
+      isResolving: false,
+    });
   }
 
   // Subscribe to auth changes (deferred so `set` is ready). On login, merge
@@ -732,6 +898,16 @@ export const useGameStore = create<GameState>((set, get) => {
     stats: storage.loadStats(),
     achievements: storage.loadAchievements(),
 
+    advDepth: 0,
+    advRelics: [],
+    advTotalScore: 0,
+    relicMods: emptyEffects(),
+    relicChoices: [],
+    advFreeLeft: 0,
+
+    tutorialSeen: storage.loadTutorialSeen(),
+    showTutorial: !storage.loadTutorialSeen(),
+
     goHome: () => {
       soundManager.play('button');
       set({ screen: 'home', savedGameExists: storage.loadSavedGame() !== null });
@@ -770,6 +946,39 @@ export const useGameStore = create<GameState>((set, get) => {
       beginLevel(BLITZ_LEVEL, { mode: 'blitz' });
     },
 
+    startAdventure: () => {
+      soundManager.play('button');
+      set({
+        advDepth: 1,
+        advRelics: [],
+        advTotalScore: 0,
+        relicMods: emptyEffects(),
+        relicChoices: [],
+      });
+      beginAdventureFloor(1);
+    },
+
+    chooseRelic: (id: string) => {
+      soundManager.play('button');
+      const relics = [...get().advRelics, id];
+      const depth = get().advDepth + 1;
+      set({
+        advRelics: relics,
+        relicMods: aggregateRelics(relics),
+        advDepth: depth,
+      });
+      beginAdventureFloor(depth);
+    },
+
+    openTutorial: () => {
+      soundManager.play('button');
+      set({ showTutorial: true });
+    },
+    closeTutorial: () => {
+      storage.saveTutorialSeen(true);
+      set({ showTutorial: false, tutorialSeen: true });
+    },
+
     resumeGame: () => {
       const saved = storage.loadSavedGame();
       if (!saved) return;
@@ -783,6 +992,7 @@ export const useGameStore = create<GameState>((set, get) => {
       const s = get();
       if (s.mode === 'daily') return s.startDaily();
       if (s.mode === 'blitz') return s.startBlitz();
+      if (s.mode === 'adventure') return s.startAdventure();
       const id = s.level?.id;
       if (id) beginLevel(getLevel(id)!);
     },

@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import { levels, DAILY_LEVEL_ID, BLITZ_LEVEL_ID } from '../../data/levels';
+import {
+  levels,
+  DAILY_LEVEL_ID,
+  BLITZ_LEVEL_ID,
+  ADVENTURE_LEVEL_ID,
+} from '../../data/levels';
 import { weekLabel } from '../../services/periods';
 import {
   getTopScores,
@@ -10,11 +15,12 @@ import {
 } from '../../services/leaderboard';
 import { Button } from '../ui/Button';
 
-type Filter = 'daily' | 'blitz' | 'all' | number;
+type Filter = 'daily' | 'blitz' | 'adventure' | 'all' | number;
 
 function paramsFor(filter: Filter): QueryParams {
   if (filter === 'daily') return { board: 'daily', scope: 'daily' };
   if (filter === 'blitz') return { board: 'blitz', scope: 'weekly' };
+  if (filter === 'adventure') return { board: 'adventure', scope: 'weekly' };
   if (filter === 'all') return { scope: 'weekly' };
   return { board: `lvl${filter}`, scope: 'weekly' };
 }
@@ -22,6 +28,7 @@ function paramsFor(filter: Filter): QueryParams {
 function boardLabel(board: string): string {
   if (board === 'daily') return '📅';
   if (board === 'blitz') return '⚡';
+  if (board === 'adventure') return '🗺️';
   return board.replace('lvl', 'F');
 }
 
@@ -51,7 +58,9 @@ export function LeaderboardScreen() {
         ? highScores[DAILY_LEVEL_ID] ?? 0
         : filter === 'blitz'
           ? highScores[BLITZ_LEVEL_ID] ?? 0
-          : highScores[filter] ?? 0;
+          : filter === 'adventure'
+            ? highScores[ADVENTURE_LEVEL_ID] ?? 0
+            : highScores[filter] ?? 0;
 
   useEffect(() => {
     let active = true;
@@ -140,6 +149,12 @@ export function LeaderboardScreen() {
           onClick={() => setFilter('blitz')}
         >
           ⚡ Relâmpago
+        </button>
+        <button
+          className={`filter ${filter === 'adventure' ? 'on' : ''}`}
+          onClick={() => setFilter('adventure')}
+        >
+          🗺️ Aventura
         </button>
         <button
           className={`filter ${filter === 'all' ? 'on' : ''}`}

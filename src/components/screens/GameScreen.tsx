@@ -12,6 +12,7 @@ import { DefeatModal } from '../ui/DefeatModal';
 import { ResultsModal } from '../ui/ResultsModal';
 import { HelpModal } from '../ui/HelpModal';
 import { Button } from '../ui/Button';
+import { getRelic } from '../../data/relics';
 
 /** The main gameplay screen (shared by normal, daily and blitz modes). */
 export function GameScreen() {
@@ -21,6 +22,8 @@ export function GameScreen() {
   const bossActive = useGameStore((s) => s.bossActive);
   const status = useGameStore((s) => s.status);
   const activeBooster = useGameStore((s) => s.activeBooster);
+  const advDepth = useGameStore((s) => s.advDepth);
+  const advRelics = useGameStore((s) => s.advRelics);
   const restartLevel = useGameStore((s) => s.restartLevel);
   const goHome = useGameStore((s) => s.goHome);
 
@@ -29,8 +32,15 @@ export function GameScreen() {
   if (!level) return null;
 
   const isBlitz = mode === 'blitz';
+  const isAdventure = mode === 'adventure';
   const modeName =
-    mode === 'daily' ? '📅 Desafio Diário' : isBlitz ? '⚡ Relâmpago' : `Fase ${level.id}`;
+    mode === 'daily'
+      ? '📅 Diário'
+      : isBlitz
+        ? '⚡ Relâmpago'
+        : isAdventure
+          ? `🗺️ Andar ${advDepth}`
+          : `Fase ${level.id}`;
 
   return (
     <div className="screen">
@@ -44,6 +54,15 @@ export function GameScreen() {
           <ObjectiveCard key={i} objective={o} />
         ))}
         {bossActive && <BossCatMeter />}
+        {isAdventure && advRelics.length > 0 && (
+          <div className="relic-strip">
+            {advRelics.map((id, i) => (
+              <span key={`${id}-${i}`} className="relic-strip__item">
+                {getRelic(id)?.icon}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {activeBooster ? (

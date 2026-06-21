@@ -8,6 +8,8 @@ export interface Stats {
   bestScore: number;
   fastWins: number;
   levelsCompleted: number;
+  /** Deepest Adventure floor reached. */
+  advBestDepth: number;
 }
 
 export function createStats(): Stats {
@@ -20,6 +22,7 @@ export function createStats(): Stats {
     bestScore: 0,
     fastWins: 0,
     levelsCompleted: 0,
+    advBestDepth: 0,
   };
 }
 
@@ -108,6 +111,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: '🏆',
     done: (s) => s.levelsCompleted >= 30,
     progress: (s) => clamp01(s.levelsCompleted / 30),
+  },
+  {
+    id: 'adventure5',
+    name: 'Explorador Felino',
+    description: 'Chegue ao Andar 5 na Aventura.',
+    icon: '🗺️',
+    done: (s) => s.advBestDepth >= 5,
+    progress: (s) => clamp01(s.advBestDepth / 5),
   },
 ];
 

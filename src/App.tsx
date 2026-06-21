@@ -4,9 +4,12 @@ import { LevelSelectScreen } from './components/screens/LevelSelectScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { LeaderboardScreen } from './components/screens/LeaderboardScreen';
 import { AchievementsScreen } from './components/screens/AchievementsScreen';
+import { RelicSelectScreen } from './components/screens/RelicSelectScreen';
+import { TutorialOverlay } from './components/ui/TutorialOverlay';
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
+  const showTutorial = useGameStore((s) => s.showTutorial);
 
   return (
     <div className="app">
@@ -16,6 +19,8 @@ export default function App() {
       {screen === 'game' && <GameScreen />}
       {screen === 'leaderboard' && <LeaderboardScreen />}
       {screen === 'achievements' && <AchievementsScreen />}
+      {screen === 'relicSelect' && <RelicSelectScreen />}
+      {showTutorial && <TutorialOverlay />}
     </div>
   );
 }

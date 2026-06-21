@@ -1,6 +1,7 @@
 import type { Board, BoardConfig, CatType, Tile } from './types';
 import { nextId } from './utils';
 import { findMatches } from './matchDetector';
+import { findHint } from './swapLogic';
 
 /** Random source: defaults to Math.random, but the Daily Challenge passes a
  *  seeded PRNG so the starting board is identical for everyone. */
@@ -123,19 +124,36 @@ export function createBoard(config: BoardConfig, rand: Rng = Math.random): Board
   }
 
   // Safety: if any matches slipped through, reshuffle those cats.
-  let guard = 0;
-  while (findMatches(board).matchedPositions.length > 0 && guard < 50) {
-    for (const { row, col } of findMatches(board).matchedPositions) {
-      const tile = board[row][col];
-      if (tile.type === 'cat') {
-        board[row][col] = makeCatTile(
-          row,
-          col,
-          pickNonMatchingCat(board, row, col, availableCats, rand),
-        );
+  const clearMatches = () => {
+    let g = 0;
+    while (findMatches(board).matchedPositions.length > 0 && g < 50) {
+      for (const { row, col } of findMatches(board).matchedPositions) {
+        const tile = board[row][col];
+        if (tile.type === 'cat') {
+          board[row][col] = makeCatTile(
+            row,
+            col,
+            pickNonMatchingCat(board, row, col, availableCats, rand),
+          );
+        }
+      }
+      g += 1;
+    }
+  };
+  clearMatches();
+
+  // Guarantee at least one legal move exists (avoid a dead starting board).
+  let moveGuard = 0;
+  while (!findHint(board) && moveGuard < 80) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (board[r][c].type === 'cat') {
+          board[r][c] = makeCatTile(r, c, pick(availableCats, rand));
+        }
       }
     }
-    guard += 1;
+    clearMatches();
+    moveGuard += 1;
   }
 
   return board;

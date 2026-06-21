@@ -76,12 +76,19 @@ snapshots so CSS transitions animate swaps, pops, and falls.
 
 ## ✨ Recursos de jogo
 
+- **Tutorial interativo** — passo a passo na primeira vez (e reabrível em
+  "❓ Como Jogar") explicando regras, poderes, especiais, novelo, chefe e modos.
 - **Modos de jogo:**
   - 🐾 **Fases** — campanha de **60 níveis** com dificuldade crescente (5
     curados + 55 gerados proceduralmente, em 6 mundos temáticos).
   - 📅 **Desafio Diário** — tabuleiro idêntico para todos no mesmo dia (semente
-    fixa), com **ranking do dia**.
+    fixa), com **ranking do dia** e **resultado compartilhável** (estilo Wordle).
   - ⚡ **Relâmpago** — 60 segundos para pontuar o máximo (ranking semanal).
+  - 🗺️ **Aventura (Roguelite)** — andares cada vez mais difíceis; entre eles,
+    escolha **1 de 3 relíquias** que mudam as regras da run. Acaba quando você
+    não bate a meta de um andar; ranking semanal por pontuação total.
+- **Dificuldade adaptativa (DDA)** — perder uma fase repetidamente concede
+  movimentos extras na próxima tentativa (apenas na campanha).
 - **Toque ou arraste** um gatinho na direção desejada para trocar peças.
 - **Juice:** squash & stretch nas peças, partículas ao explodir, *screen shake*
   em combos grandes e confete na vitória.

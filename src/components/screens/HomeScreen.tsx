@@ -9,6 +9,8 @@ export function HomeScreen() {
   const goAchievements = useGameStore((s) => s.goAchievements);
   const startDaily = useGameStore((s) => s.startDaily);
   const startBlitz = useGameStore((s) => s.startBlitz);
+  const startAdventure = useGameStore((s) => s.startAdventure);
+  const openTutorial = useGameStore((s) => s.openTutorial);
   const resumeGame = useGameStore((s) => s.resumeGame);
   const savedGameExists = useGameStore((s) => s.savedGameExists);
   const soundEnabled = useGameStore((s) => s.soundEnabled);
@@ -58,11 +60,14 @@ export function HomeScreen() {
         >
           🐾 Jogar (Fases)
         </Button>
+        <Button variant="purple" block onClick={startAdventure}>
+          🗺️ Aventura (Roguelite)
+        </Button>
         <div className="row">
           <Button variant="pink" block onClick={startDaily}>
             📅 Diário
           </Button>
-          <Button variant="purple" block onClick={startBlitz}>
+          <Button variant="blue" block onClick={startBlitz}>
             ⚡ Relâmpago
           </Button>
         </div>
@@ -74,9 +79,14 @@ export function HomeScreen() {
             🏅 Conquistas
           </Button>
         </div>
-        <Button variant="ghost" block small onClick={toggleSound}>
-          {soundEnabled ? '🔊 Som ligado' : '🔇 Som desligado'}
-        </Button>
+        <div className="row">
+          <Button variant="ghost" block small onClick={openTutorial}>
+            ❓ Como Jogar
+          </Button>
+          <Button variant="ghost" block small onClick={toggleSound}>
+            {soundEnabled ? '🔊 Som' : '🔇 Som'}
+          </Button>
+        </div>
       </div>
     </div>
   );

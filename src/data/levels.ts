@@ -269,8 +269,75 @@ export function getLevel(id: number): Level | undefined {
 
 export const DAILY_LEVEL_ID = 1000;
 export const BLITZ_LEVEL_ID = 1001;
+export const ADVENTURE_LEVEL_ID = 1002;
 /** Blitz countdown length. */
 export const BLITZ_DURATION_MS = 60_000;
+
+const round50b = (n: number) => Math.round(n / 50) * 50;
+const clampN = (n: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, n));
+
+/**
+ * Builds one roguelite Adventure floor. Difficulty scales with depth; relic
+ * bonuses (extra moves / yarns) are applied by the store at setup time. The
+ * objective is always a single score target.
+ */
+export function makeAdventureFloor(depth: number, extraYarns = 0): Level {
+  const availableCats = depth < 3 ? ALL_CATS.slice(0, 5) : ALL_CATS;
+  const target = round50b(700 + depth * 550);
+  const moves = clampN(24 - Math.floor(depth / 3), 14, 24);
+
+  const obstacles: Array<{ row: number; col: number; type: ObstacleType }> = [];
+  const yarns: Array<{ row: number; col: number }> = [];
+  const occupied = new Set<string>();
+  const rand = Math.random;
+  const freePos = () => {
+    for (let t = 0; t < 40; t++) {
+      const row = 1 + Math.floor(rand() * 6);
+      const col = Math.floor(rand() * 8);
+      const k = `${row},${col}`;
+      if (!occupied.has(k)) {
+        occupied.add(k);
+        return { row, col };
+      }
+    }
+    return null;
+  };
+
+  // Hazards scale with depth.
+  const boxes = depth >= 4 ? clampN(Math.floor(depth / 2), 2, 8) : 0;
+  for (let i = 0; i < boxes; i++) {
+    const p = freePos();
+    if (p) obstacles.push({ ...p, type: 'box' });
+  }
+  if (depth >= 6) {
+    for (let i = 0; i < 2; i++) {
+      const p = freePos();
+      if (p) obstacles.push({ ...p, type: 'scratcher' });
+    }
+  }
+  for (let i = 0; i < extraYarns; i++) {
+    const p = freePos();
+    if (p) yarns.push(p);
+  }
+
+  const bossCat = depth % 4 === 0;
+
+  return {
+    id: ADVENTURE_LEVEL_ID,
+    name: `Andar ${depth}`,
+    moves,
+    objectives: [{ type: 'score', target }],
+    boardConfig: {
+      rows: 8,
+      cols: 8,
+      availableCats,
+      ...(obstacles.length ? { obstacles } : {}),
+      ...(yarns.length ? { yarns } : {}),
+      ...(bossCat ? { bossCat: true } : {}),
+    },
+  };
+}
 
 /** Synthetic level for the Daily Challenge (seeded board, fixed moves). */
 export function makeDailyLevel(dayId: string): Level {

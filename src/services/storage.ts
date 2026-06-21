@@ -28,6 +28,8 @@ const KEYS = {
   nickname: 'catmatch.nickname',
   stats: 'catmatch.stats',
   achievements: 'catmatch.achievements',
+  tutorialSeen: 'catmatch.tutorialseen',
+  attempts: 'catmatch.attempts',
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -110,4 +112,21 @@ export function loadAchievements(): string[] {
 }
 export function saveAchievements(ids: string[]): void {
   write(KEYS.achievements, ids);
+}
+
+// ---- Tutorial seen flag ----
+export function loadTutorialSeen(): boolean {
+  return read<boolean>(KEYS.tutorialSeen, false);
+}
+export function saveTutorialSeen(seen: boolean): void {
+  write(KEYS.tutorialSeen, seen);
+}
+
+// ---- Adaptive difficulty: per-level recent fail counts ----
+export type AttemptMap = Record<number, { fails: number }>;
+export function loadAttempts(): AttemptMap {
+  return read<AttemptMap>(KEYS.attempts, {});
+}
+export function saveAttempts(map: AttemptMap): void {
+  write(KEYS.attempts, map);
 }

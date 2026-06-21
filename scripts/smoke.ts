@@ -4,7 +4,10 @@ import { findMatches } from '../src/game/matchDetector';
 import { resolveMatchStep } from '../src/game/cascadeResolver';
 import { applyGravity, refillBoard } from '../src/game/gravity';
 import { swapTiles, findHint, isValidSwap } from '../src/game/swapLogic';
-import { levels } from '../src/data/levels';
+import { levels, makeAdventureFloor } from '../src/data/levels';
+import { aggregateRelics, offerRelics } from '../src/data/relics';
+import { buildDailyShare } from '../src/services/share';
+import { cloneBoard } from '../src/game/utils';
 import type { Board } from '../src/game/types';
 
 function assert(cond: boolean, msg: string) {
@@ -111,5 +114,46 @@ const sig = (b: Board) => b.flat().map((t) => `${t.type}:${t.catType ?? ''}`).jo
 assert(sig(b1) === sig(b2), 'daily seeded board is deterministic');
 const b3 = createBoard(cfg, mulberry32(seed + 1));
 assert(sig(b1) !== sig(b3), 'different seed → different board');
+
+// 5. Relics (Adventure)
+const eff = aggregateRelics(['patasExtras', 'ronronarDourado']);
+assert(eff.extraMoves === 3, 'patasExtras grants +3 moves');
+assert(eff.scoreMult > 1.2, 'ronronarDourado raises scoreMult');
+const offer = offerRelics(3);
+assert(offer.length === 3, 'offerRelics returns 3');
+assert(new Set(offer).size === 3, 'offerRelics are distinct');
+
+// 6. Adventure floors scale and are valid
+const af1 = makeAdventureFloor(1, 0);
+const af8 = makeAdventureFloor(8, 0);
+assert(
+  af8.objectives[0].target > af1.objectives[0].target,
+  'adventure target grows with depth',
+);
+const advBoard = createBoard(af1.boardConfig);
+assert(
+  findMatches(advBoard).matchedPositions.length === 0,
+  'adventure floor has no initial matches',
+);
+assert(findHint(advBoard) !== null, 'adventure floor has a move');
+
+// 7. Relic score multiplier scales scoring
+{
+  const b = createBoard(levels[0].boardConfig);
+  const h = findHint(b)!;
+  swapTiles(b, h[0], h[1]);
+  const b2 = cloneBoard(b);
+  const base = resolveMatchStep(b, 1);
+  const boosted = resolveMatchStep(b2, 1, { scoreMult: 2 });
+  assert(
+    boosted.scoreGained >= base.scoreGained * 1.9,
+    `scoreMult x2 roughly doubles score (${base.scoreGained} -> ${boosted.scoreGained})`,
+  );
+}
+
+// 8. Daily share card
+const share = buildDailyShare('2026-06-21', 5400);
+assert(share.text.includes('Cat Match'), 'share text is branded');
+assert(share.tier >= 1, 'share tier computed');
 
 console.log('\nAll smoke tests passed ✅');
