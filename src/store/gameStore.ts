@@ -51,17 +51,13 @@ import * as storage from '../services/storage';
 import { submitScore } from '../services/leaderboard';
 import {
   onAuthChange,
-  signInWithGoogle,
-  signInWithApple,
+  signUpWithEmail,
+  signInWithEmail,
   signOutUser,
-  authAvailable as firebaseAuthAvailable,
+  authErrorMessage,
+  authAvailable,
   type AppUser,
 } from '../services/auth';
-import { isNativeApp } from '../services/platform';
-
-// Social login is hidden in the native shell for v1 (web uses popup auth that
-// doesn't work in a WKWebView; native sign-in is a follow-up). Web keeps it.
-const authAvailable = firebaseAuthAvailable && !isNativeApp();
 import {
   loadCloudSave,
   saveCloudSave,
@@ -157,6 +153,7 @@ interface GameState {
   goLevelSelect: () => void;
   goLeaderboard: () => void;
   goAchievements: () => void;
+  goAuth: () => void;
   startLevel: (id: number) => void;
   startDaily: () => void;
   startBlitz: () => void;
@@ -173,8 +170,12 @@ interface GameState {
   toggleSound: () => void;
   setNickname: (name: string) => void;
   tick: () => void;
-  signInGoogle: () => Promise<void>;
-  signInApple: () => Promise<void>;
+  signInEmail: (email: string, password: string) => Promise<string | null>;
+  signUpEmail: (
+    email: string,
+    password: string,
+    nickname: string,
+  ) => Promise<string | null>;
   signOut: () => Promise<void>;
 }
 
@@ -937,6 +938,10 @@ export const useGameStore = create<GameState>((set, get) => {
       soundManager.play('button');
       set({ screen: 'achievements' });
     },
+    goAuth: () => {
+      soundManager.play('button');
+      set({ screen: 'auth' });
+    },
 
     startLevel: (id: number) => {
       const level = getLevel(id);
@@ -1104,20 +1109,25 @@ export const useGameStore = create<GameState>((set, get) => {
       }
     },
 
-    signInGoogle: async () => {
-      soundManager.play('button');
+    signInEmail: async (email: string, password: string) => {
       try {
-        await signInWithGoogle();
+        await signInWithEmail(email.trim(), password);
+        return null;
       } catch (e) {
-        console.warn('Login Google falhou', e);
+        return authErrorMessage(e);
       }
     },
-    signInApple: async () => {
-      soundManager.play('button');
+    signUpEmail: async (email: string, password: string, nickname: string) => {
+      const nick = nickname.trim().slice(0, 18);
       try {
-        await signInWithApple();
+        await signUpWithEmail(email.trim(), password, nick || undefined);
+        if (nick) {
+          storage.saveNickname(nick);
+          set({ nickname: nick });
+        }
+        return null;
       } catch (e) {
-        console.warn('Login Apple falhou', e);
+        return authErrorMessage(e);
       }
     },
     signOut: async () => {

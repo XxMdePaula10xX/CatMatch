@@ -39,8 +39,7 @@ export function LeaderboardScreen() {
   const user = useGameStore((s) => s.user);
   const authReady = useGameStore((s) => s.authReady);
   const authAvailable = useGameStore((s) => s.authAvailable);
-  const signInGoogle = useGameStore((s) => s.signInGoogle);
-  const signInApple = useGameStore((s) => s.signInApple);
+  const goAuth = useGameStore((s) => s.goAuth);
   const signOut = useGameStore((s) => s.signOut);
   const highScores = useGameStore((s) => s.highScores);
 
@@ -129,13 +128,11 @@ export function LeaderboardScreen() {
         ) : (
           <div className="stack">
             <p className="center muted" style={{ margin: 0 }}>
-              Entre para salvar sua pontuação no ranking global.
+              Entre ou crie uma conta para salvar sua pontuação no ranking
+              global.
             </p>
-            <Button variant="ghost" block onClick={signInGoogle}>
-              <span style={{ fontSize: 18 }}>🔵</span> Entrar com Google
-            </Button>
-            <Button variant="ghost" block onClick={signInApple}>
-              <span style={{ fontSize: 18 }}>🍎</span> Entrar com Apple
+            <Button variant="green" block onClick={goAuth}>
+              🔑 Entrar / Criar conta
             </Button>
           </div>
         )}

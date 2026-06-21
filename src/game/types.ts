@@ -96,7 +96,8 @@ export type Screen =
   | 'game'
   | 'leaderboard'
   | 'achievements'
-  | 'relicSelect';
+  | 'relicSelect'
+  | 'auth';
 
 export type GameStatus = 'playing' | 'won' | 'lost' | 'finished';
 

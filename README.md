@@ -120,8 +120,7 @@ Para ativar online:
 1. Crie um projeto em <https://console.firebase.google.com>.
 2. Adicione um app **Web** e copie o `firebaseConfig`.
 3. **Firestore Database:** ative (modo de produção).
-4. **Authentication → Sign-in method:** ative **Google** (e, para iOS,
-   **Apple** — exige conta Apple Developer + Services ID).
+4. **Authentication → Sign-in method:** ative **E-mail/senha** (Email/Password).
 5. Em **Authentication → Settings → Authorized domains**, inclua o domínio onde
    o app roda (`localhost` já vem incluído para dev).
 6. Copie `.env.example` para `.env`, preencha as chaves `VITE_FIREBASE_*` e rode
@@ -197,11 +196,9 @@ npm run cap:assets       # gera ícones/splash a partir de assets/logo.svg
 npx cap open ios         # abre no Xcode
 ```
 
-> ⚠️ **Login no app nativo:** na v1 o login social (Google/Apple) fica **oculto
-> no app nativo** — o ranking funciona em modo local no aparelho. O login web
-> via popup do Firebase não funciona dentro do WKWebView; habilitá-lo no nativo
-> (com Sign in with Apple, exigido pela regra 4.8 da Apple) é uma tarefa de
-> v1.1 usando um plugin de auth nativo. Na web, o login continua completo.
+> **Login:** o app usa **e-mail/senha** (Firebase Auth), que funciona igual na
+> web e no app nativo (iOS/Android) — sem popup e sem precisar de "Sign in with
+> Apple". Habilite o provedor **E-mail/senha** no console do Firebase.
 
 ## 🚀 After the MVP
 
