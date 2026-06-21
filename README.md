@@ -155,6 +155,43 @@ mostra um **erro com um link** — basta clicar nele para criar o índice em 1
 clique. Campos usados: `board` + `periodId` + `score`, e `periodId` + `scope` +
 `score` (para o "Geral").
 
+## 📱 Publicar nas lojas (Capacitor)
+
+O jogo é empacotado como app nativo com **Capacitor** (reaproveita o build web).
+Como o iOS exige um Mac para compilar, usamos o **Codemagic** (Mac na nuvem) —
+nenhum Mac local é necessário.
+
+### Já configurado no repo
+- `capacitor.config.ts` (appId `com.catmatch.app` — **troque pelo seu**)
+- `assets/logo.svg` → ícone e splash gerados por `@capacitor/assets`
+- `public/privacy.html` → política de privacidade (hospede e use a URL na loja)
+- `codemagic.yaml` → pipelines de build iOS (App Store/TestFlight) e Android
+
+### Passos (iOS, sem Mac)
+1. No [Codemagic](https://codemagic.io): conecte este repositório.
+2. **Code signing** → conecte sua conta Apple Developer via *App Store Connect
+   API key* (assinatura automática).
+3. Crie o grupo de variáveis `catmatch_env` com as chaves `VITE_FIREBASE_*`.
+4. Ajuste `BUNDLE_ID` e `APP_STORE_APPLE_ID` no `codemagic.yaml`.
+5. Rode o workflow **Cat Match — iOS**: ele builda o web, gera ícones, cria o
+   projeto iOS, assina e envia ao **TestFlight**.
+6. No **App Store Connect**: preencha metadados, screenshots, a URL da política
+   de privacidade e envie para revisão.
+
+### Localmente (se um dia tiver um Mac)
+```bash
+npm run build
+npx cap add ios          # gera ios/ (precisa de macOS + Xcode + CocoaPods)
+npm run cap:assets       # gera ícones/splash a partir de assets/logo.svg
+npx cap open ios         # abre no Xcode
+```
+
+> ⚠️ **Login no app nativo:** na v1 o login social (Google/Apple) fica **oculto
+> no app nativo** — o ranking funciona em modo local no aparelho. O login web
+> via popup do Firebase não funciona dentro do WKWebView; habilitá-lo no nativo
+> (com Sign in with Apple, exigido pela regra 4.8 da Apple) é uma tarefa de
+> v1.1 usando um plugin de auth nativo. Na web, o login continua completo.
+
 ## 🚀 After the MVP
 
 Lives, booster shop, coins, more levels, a progression map, cat skins, daily

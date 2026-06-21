@@ -54,9 +54,14 @@ import {
   signInWithGoogle,
   signInWithApple,
   signOutUser,
-  authAvailable,
+  authAvailable as firebaseAuthAvailable,
   type AppUser,
 } from '../services/auth';
+import { isNativeApp } from '../services/platform';
+
+// Social login is hidden in the native shell for v1 (web uses popup auth that
+// doesn't work in a WKWebView; native sign-in is a follow-up). Web keeps it.
+const authAvailable = firebaseAuthAvailable && !isNativeApp();
 import {
   loadCloudSave,
   saveCloudSave,
