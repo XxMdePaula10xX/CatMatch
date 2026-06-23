@@ -48,7 +48,7 @@ export function ProfileScreen() {
         ? { ok: false, text: err }
         : {
             ok: true,
-            text: `E-mail de redefinição enviado para ${user.email}.`,
+            text: `E-mail enviado para ${user.email}. Cheque também a caixa de spam/lixo eletrônico.`,
           },
     );
   }

@@ -27,7 +27,10 @@ export function AuthScreen() {
     const err = await resetPassword(email);
     setBusy(false);
     if (err) setError(err);
-    else setInfo(`Enviamos um link de redefinição para ${email.trim()}.`);
+    else
+      setInfo(
+        `Enviamos um link para ${email.trim()}. Não esqueça de checar a caixa de spam/lixo eletrônico.`,
+      );
   }
 
   const isSignup = mode === 'signup';
