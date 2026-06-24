@@ -28,6 +28,7 @@ workflows:
         XCODE_WORKSPACE: 'ios/App/App.xcworkspace'
         XCODE_SCHEME: 'App'
         APP_STORE_APPLE_ID: 6782692948 # numeric App ID from App Store Connect
+        APP_VERSION: '1.1' # marketing version (CFBundleShortVersionString)
       node: 20
       xcode: latest
       cocoapods: default
@@ -65,10 +66,12 @@ workflows:
           PLIST=ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PLIST" \
             || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PLIST"
-      - name: Set incrementing build number
+      - name: Set version + incrementing build number
         script: |
-          # Apple rejects duplicate build numbers; use the next TestFlight one.
           cd ios/App
+          # Marketing version shown on the App Store (e.g. 1.1).
+          agvtool new-marketing-version "$APP_VERSION"
+          # Apple rejects duplicate build numbers; use the next TestFlight one.
           LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           agvtool new-version -all $((LATEST + 1))
       - name: Install CocoaPods
