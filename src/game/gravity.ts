@@ -58,32 +58,18 @@ function compactSegment(
 }
 
 /**
- * Spawns fresh cats into empty cells at the top of each column segment.
- * Only fills cells that are not below a fall-blocking obstacle.
+ * Spawns fresh cats into every empty cell. After gravity, empties sit at the
+ * top of each column segment (between fall-blockers); filling them all prevents
+ * permanent holes when cells are cleared below a yarn/obstacle (e.g. by the
+ * laser booster). Spawning a cat directly into the cell is safe — nothing
+ * "falls through" a blocker.
  */
 export function refillBoard(board: Board, availableCats: CatType[]): void {
   const rows = board.length;
   const cols = board[0]?.length ?? 0;
 
   for (let c = 0; c < cols; c++) {
-    // Find the topmost fall-blocker; cells above the top blocker get refilled,
-    // but cells trapped beneath a blocker should not be filled from the top.
-    let topBlockerRow = -1;
     for (let r = 0; r < rows; r++) {
-      const tile = board[r][c];
-      const blocks =
-        (tile.type === 'obstacle' &&
-          tile.obstacleType &&
-          OBSTACLES[tile.obstacleType].blocksFall) ||
-        tile.type === 'yarn';
-      if (blocks) {
-        topBlockerRow = r;
-        break;
-      }
-    }
-
-    for (let r = 0; r < rows; r++) {
-      if (topBlockerRow !== -1 && r > topBlockerRow) break;
       const tile = board[r][c];
       if (tile.type === 'empty') {
         const fresh: Tile = makeCatTile(r, c, randomItem(availableCats));
