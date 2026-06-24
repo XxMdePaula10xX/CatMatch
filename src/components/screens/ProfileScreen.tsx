@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { playerTag } from '../../services/leaderboard';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 
 /** Account profile: email, editable nickname, quick stats, password reset. */
 export function ProfileScreen() {
@@ -11,6 +12,7 @@ export function ProfileScreen() {
   const setNickname = useGameStore((s) => s.setNickname);
   const signOut = useGameStore((s) => s.signOut);
   const resetPassword = useGameStore((s) => s.resetPassword);
+  const deleteAccount = useGameStore((s) => s.deleteAccount);
   const starsByLevel = useGameStore((s) => s.starsByLevel);
   const achievements = useGameStore((s) => s.achievements);
   const stats = useGameStore((s) => s.stats);
@@ -18,6 +20,21 @@ export function ProfileScreen() {
   const [name, setName] = useState(nickname);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const [showDelete, setShowDelete] = useState(false);
+  const [delPwd, setDelPwd] = useState('');
+  const [delErr, setDelErr] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function confirmDelete() {
+    setDelErr(null);
+    if (!delPwd) return setDelErr('Digite sua senha para confirmar.');
+    setDeleting(true);
+    const err = await deleteAccount(delPwd);
+    setDeleting(false);
+    if (err) setDelErr(err);
+    // On success the store navigates home and this screen unmounts.
+  }
 
   const totalStars = Object.values(starsByLevel).reduce((a, b) => a + b, 0);
 
@@ -131,7 +148,52 @@ export function ProfileScreen() {
             {msg.ok ? '✅' : '⚠️'} {msg.text}
           </p>
         )}
+        <button className="danger-link" onClick={() => setShowDelete(true)}>
+          Excluir minha conta
+        </button>
       </div>
+
+      {showDelete && (
+        <Modal>
+          <button
+            className="modal__close"
+            aria-label="Fechar"
+            onClick={() => setShowDelete(false)}
+          >
+            ✕
+          </button>
+          <h2 className="modal__title">Excluir conta</h2>
+          <p className="muted" style={{ fontSize: 13 }}>
+            Isso apaga sua conta, suas pontuações no ranking e o progresso salvo
+            na nuvem. <strong>Não dá para desfazer.</strong>
+          </p>
+          <p className="stat__label" style={{ textAlign: 'left' }}>
+            Confirme sua senha:
+          </p>
+          <input
+            className="nick-input"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Sua senha"
+            value={delPwd}
+            onChange={(e) => setDelPwd(e.target.value)}
+          />
+          {delErr && <p className="auth-error">⚠️ {delErr}</p>}
+          <div className="stack" style={{ marginTop: 10 }}>
+            <Button variant="pink" block disabled={deleting} onClick={confirmDelete}>
+              {deleting ? 'Excluindo…' : 'Excluir conta permanentemente'}
+            </Button>
+            <Button
+              variant="ghost"
+              block
+              disabled={deleting}
+              onClick={() => setShowDelete(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

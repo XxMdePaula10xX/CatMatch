@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { getDb, firebaseEnabled } from './firebase';
 import type { Stats } from '../data/achievements';
 
@@ -37,6 +37,18 @@ export async function saveCloudSave(
     await setDoc(doc(db, COLLECTION, uid), data, { merge: true });
   } catch {
     /* offline / rules — ignore */
+  }
+}
+
+/** Deletes the user's cloud save (for account deletion). */
+export async function deleteCloudSave(uid: string): Promise<void> {
+  if (!firebaseEnabled) return;
+  const db = getDb();
+  if (!db) return;
+  try {
+    await deleteDoc(doc(db, COLLECTION, uid));
+  } catch {
+    /* ignore */
   }
 }
 

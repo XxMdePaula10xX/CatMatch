@@ -4,6 +4,7 @@ import {
   getDoc,
   setDoc,
   getDocs,
+  deleteDoc,
   query,
   where,
   serverTimestamp,
@@ -257,6 +258,20 @@ export async function getPlayerRank(
 
 export function isGlobalLeaderboard(): boolean {
   return firebaseEnabled;
+}
+
+/** Deletes all of a user's leaderboard entries (for account deletion). */
+export async function deleteUserScores(uid: string): Promise<void> {
+  if (!firebaseEnabled || !uid) return;
+  const db = getDb();
+  if (!db) return;
+  try {
+    const q = query(collection(db, COLLECTION), where('uid', '==', uid));
+    const snap = await withTimeout(getDocs(q));
+    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+  } catch (e) {
+    console.warn('deleteUserScores falhou', e);
+  }
 }
 
 /**

@@ -48,13 +48,19 @@ import { soundManager } from '../services/soundManager';
 import { SPECIAL_CATS } from '../data/cats';
 import type { BoosterId } from '../data/boosters';
 import * as storage from '../services/storage';
-import { submitScore, renameUserScores } from '../services/leaderboard';
+import {
+  submitScore,
+  renameUserScores,
+  deleteUserScores,
+} from '../services/leaderboard';
 import {
   onAuthChange,
   signUpWithEmail,
   signInWithEmail,
   signOutUser,
   resetPassword as resetPasswordEmail,
+  reauthenticate,
+  deleteCurrentUser,
   authErrorMessage,
   authAvailable,
   type AppUser,
@@ -62,6 +68,7 @@ import {
 import {
   loadCloudSave,
   saveCloudSave,
+  deleteCloudSave,
   mergeCloud,
   type CloudData,
 } from '../services/cloudSave';
@@ -182,6 +189,7 @@ interface GameState {
   ) => Promise<string | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<string | null>;
+  deleteAccount: (password: string) => Promise<string | null>;
 }
 
 let floatId = 0;
@@ -1166,6 +1174,23 @@ export const useGameStore = create<GameState>((set, get) => {
     resetPassword: async (email: string) => {
       try {
         await resetPasswordEmail(email.trim());
+        return null;
+      } catch (e) {
+        return authErrorMessage(e);
+      }
+    },
+    deleteAccount: async (password: string) => {
+      const user = get().user;
+      if (!user) return 'Você não está conectado.';
+      try {
+        // Verify identity (Firebase requires a recent login to delete), then
+        // remove the user's cloud data while still authenticated, and finally
+        // delete the account itself.
+        await reauthenticate(password);
+        await deleteUserScores(user.uid);
+        await deleteCloudSave(user.uid);
+        await deleteCurrentUser();
+        set({ user: null, screen: 'home' });
         return null;
       } catch (e) {
         return authErrorMessage(e);

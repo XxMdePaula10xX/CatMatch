@@ -918,6 +918,18 @@
   font-size: 16px;
   color: var(--brown);
 }
+.danger-link {
+  background: none;
+  border: none;
+  color: var(--red);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px;
+  opacity: 0.85;
+}
 
 /* ---------- Leaderboard ---------- */
 .nick-input {

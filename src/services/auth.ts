@@ -7,6 +7,9 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   sendPasswordResetEmail,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser,
   signOut,
   onAuthStateChanged,
   type Auth,
@@ -90,6 +93,24 @@ export async function resetPassword(email: string): Promise<void> {
 export async function signOutUser(): Promise<void> {
   const a = getAuthInstance();
   if (a) await signOut(a);
+}
+
+/** Re-verifies the current user with their password (needed before deletion). */
+export async function reauthenticate(password: string): Promise<void> {
+  const a = getAuthInstance();
+  const user = a?.currentUser;
+  if (!a || !user) throw new Error('Não conectado');
+  if (user.email) {
+    const cred = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, cred);
+  }
+}
+
+/** Permanently deletes the current Firebase Auth account. */
+export async function deleteCurrentUser(): Promise<void> {
+  const a = getAuthInstance();
+  const user = a?.currentUser;
+  if (a && user) await deleteUser(user);
 }
 
 /** Turns a Firebase auth error into a friendly Portuguese message. */

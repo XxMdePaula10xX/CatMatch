@@ -69,14 +69,26 @@ workflows:
       - name: Set version + incrementing build number
         script: |
           cd ios/App
-          # Marketing version shown on the App Store (e.g. 1.1).
-          agvtool new-marketing-version "$APP_VERSION"
-          # Apple rejects duplicate build numbers; use the next TestFlight one.
-          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
-          agvtool new-version -all $((LATEST + 1))
+          # The Capacitor template is NOT apple-generic versioned, so `agvtool
+          # new-version` is unreliable. Set the Xcode build settings directly —
+          # Info.plist resolves $(MARKETING_VERSION)/$(CURRENT_PROJECT_VERSION)
+          # at build time, so this is what actually ships.
+          LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          BUILD_NUMBER=$((LATEST + 1))
+          echo "==> Version $APP_VERSION (build $BUILD_NUMBER)"
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${APP_VERSION};/g" App.xcodeproj/project.pbxproj
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${BUILD_NUMBER};/g" App.xcodeproj/project.pbxproj
       - name: Install CocoaPods
         script: |
           cd ios/App && pod install
+      - name: Add privacy manifest (required-reason API declaration)
+        script: |
+          # The badge plugin uses UserDefaults (a required-reason API). Declare
+          # it in an app-level PrivacyInfo.xcprivacy and add it to the App target.
+          # Runs after pod install so CocoaPods can't drop the file reference.
+          # (ios/ is regenerated each build, so this runs in CI.)
+          cp scripts/PrivacyInfo.xcprivacy ios/App/App/PrivacyInfo.xcprivacy
+          ruby scripts/add_privacy_manifest.rb
       - name: Set up code signing (automatic, via App Store Connect API key)
         script: |
           set -e
