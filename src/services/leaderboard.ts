@@ -49,8 +49,88 @@ function periodFor(scope: Scope): string {
   return scope === 'daily' ? getDayId() : getWeekId();
 }
 
-/** Best-effort ISO country code from the device locale (no GPS, privacy-safe). */
+/**
+ * Maps IANA time zones to ISO country codes. The time zone reflects where the
+ * device actually is, unlike the language (a phone set to English in Brazil
+ * would otherwise report GB/US). Covers the common zones; unknown ones fall
+ * back to the locale region.
+ */
+const TZ_COUNTRY: Record<string, string> = {
+  // Brazil
+  'America/Sao_Paulo': 'BR', 'America/Bahia': 'BR', 'America/Fortaleza': 'BR',
+  'America/Recife': 'BR', 'America/Manaus': 'BR', 'America/Belem': 'BR',
+  'America/Cuiaba': 'BR', 'America/Campo_Grande': 'BR', 'America/Boa_Vista': 'BR',
+  'America/Porto_Velho': 'BR', 'America/Rio_Branco': 'BR', 'America/Noronha': 'BR',
+  'America/Maceio': 'BR', 'America/Araguaina': 'BR', 'America/Santarem': 'BR',
+  'America/Eirunepe': 'BR',
+  // Portugal
+  'Europe/Lisbon': 'PT', 'Atlantic/Azores': 'PT', 'Atlantic/Madeira': 'PT',
+  // USA
+  'America/New_York': 'US', 'America/Detroit': 'US', 'America/Chicago': 'US',
+  'America/Denver': 'US', 'America/Phoenix': 'US', 'America/Los_Angeles': 'US',
+  'America/Anchorage': 'US', 'Pacific/Honolulu': 'US', 'America/Boise': 'US',
+  'America/Indiana/Indianapolis': 'US',
+  // Canada
+  'America/Toronto': 'CA', 'America/Vancouver': 'CA', 'America/Edmonton': 'CA',
+  'America/Winnipeg': 'CA', 'America/Halifax': 'CA', 'America/St_Johns': 'CA',
+  'America/Regina': 'CA',
+  // Mexico & Central America
+  'America/Mexico_City': 'MX', 'America/Monterrey': 'MX', 'America/Cancun': 'MX',
+  'America/Tijuana': 'MX', 'America/Merida': 'MX', 'America/Chihuahua': 'MX',
+  'America/Guatemala': 'GT', 'America/Tegucigalpa': 'HN', 'America/Managua': 'NI',
+  'America/Costa_Rica': 'CR', 'America/Panama': 'PA', 'America/El_Salvador': 'SV',
+  'America/Belize': 'BZ',
+  // South America
+  'America/Argentina/Buenos_Aires': 'AR', 'America/Argentina/Cordoba': 'AR',
+  'America/Argentina/Mendoza': 'AR', 'America/Argentina/Salta': 'AR',
+  'America/Argentina/Tucuman': 'AR', 'America/Santiago': 'CL',
+  'America/Punta_Arenas': 'CL', 'America/Bogota': 'CO', 'America/Lima': 'PE',
+  'America/La_Paz': 'BO', 'America/Caracas': 'VE', 'America/Montevideo': 'UY',
+  'America/Asuncion': 'PY', 'America/Guayaquil': 'EC', 'America/Cayenne': 'GF',
+  'America/Paramaribo': 'SR', 'America/Guyana': 'GY',
+  // Caribbean
+  'America/Havana': 'CU', 'America/Santo_Domingo': 'DO',
+  'America/Puerto_Rico': 'PR', 'America/Jamaica': 'JM',
+  'America/Port-au-Prince': 'HT', 'America/Nassau': 'BS',
+  'America/Barbados': 'BB', 'America/Port_of_Spain': 'TT',
+  // Europe
+  'Europe/London': 'GB', 'Europe/Dublin': 'IE', 'Europe/Paris': 'FR',
+  'Europe/Berlin': 'DE', 'Europe/Madrid': 'ES', 'Europe/Rome': 'IT',
+  'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE', 'Europe/Vienna': 'AT',
+  'Europe/Zurich': 'CH', 'Europe/Warsaw': 'PL', 'Europe/Prague': 'CZ',
+  'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO', 'Europe/Athens': 'GR',
+  'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK',
+  'Europe/Helsinki': 'FI', 'Europe/Moscow': 'RU', 'Europe/Kiev': 'UA',
+  'Europe/Kyiv': 'UA', 'Europe/Istanbul': 'TR',
+  // Africa
+  'Africa/Lagos': 'NG', 'Africa/Cairo': 'EG', 'Africa/Johannesburg': 'ZA',
+  'Africa/Nairobi': 'KE', 'Africa/Casablanca': 'MA', 'Africa/Accra': 'GH',
+  'Africa/Algiers': 'DZ', 'Africa/Tunis': 'TN', 'Africa/Luanda': 'AO',
+  'Africa/Maputo': 'MZ',
+  // Asia / Middle East
+  'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN', 'Asia/Hong_Kong': 'HK',
+  'Asia/Seoul': 'KR', 'Asia/Singapore': 'SG', 'Asia/Bangkok': 'TH',
+  'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Kolkata': 'IN',
+  'Asia/Karachi': 'PK', 'Asia/Dhaka': 'BD', 'Asia/Dubai': 'AE',
+  'Asia/Riyadh': 'SA', 'Asia/Tehran': 'IR', 'Asia/Jerusalem': 'IL',
+  'Asia/Ho_Chi_Minh': 'VN', 'Asia/Kuala_Lumpur': 'MY', 'Asia/Taipei': 'TW',
+  // Oceania
+  'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Brisbane': 'AU',
+  'Australia/Perth': 'AU', 'Australia/Adelaide': 'AU', 'Pacific/Auckland': 'NZ',
+};
+
+/**
+ * Best-effort ISO country code, primarily from the device time zone (reflects
+ * actual location, not the phone language), falling back to the locale region.
+ * No GPS, privacy-safe.
+ */
 export function getCountryCode(): string | undefined {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TZ_COUNTRY[tz]) return TZ_COUNTRY[tz];
+  } catch {
+    /* ignore */
+  }
   try {
     const loc = navigator.languages?.[0] || navigator.language || '';
     if (!loc) return undefined;
@@ -271,6 +351,30 @@ export async function deleteUserScores(uid: string): Promise<void> {
     await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
   } catch (e) {
     console.warn('deleteUserScores falhou', e);
+  }
+}
+
+/**
+ * Corrects the country on a user's existing leaderboard entries to match the
+ * device's current detected country (fixes flags saved before the time-zone
+ * detection). Only writes the entries whose country actually differs.
+ */
+export async function refreshUserCountry(uid: string): Promise<void> {
+  if (!firebaseEnabled || !uid) return;
+  const country = getCountryCode();
+  if (!country) return;
+  const db = getDb();
+  if (!db) return;
+  try {
+    const q = query(collection(db, COLLECTION), where('uid', '==', uid));
+    const snap = await withTimeout(getDocs(q));
+    await Promise.all(
+      snap.docs
+        .filter((d) => (d.data() as LeaderEntry).country !== country)
+        .map((d) => setDoc(d.ref, { country }, { merge: true })),
+    );
+  } catch (e) {
+    console.warn('refreshUserCountry falhou', e);
   }
 }
 

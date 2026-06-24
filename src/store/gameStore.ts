@@ -52,6 +52,7 @@ import {
   submitScore,
   renameUserScores,
   deleteUserScores,
+  refreshUserCountry,
 } from '../services/leaderboard';
 import {
   onAuthChange,
@@ -856,6 +857,10 @@ export const useGameStore = create<GameState>((set, get) => {
         patch.nickname = user.name;
       }
       set(patch);
+
+      // Correct any leaderboard entries whose country was saved from the old
+      // language-based detection (e.g. GB instead of BR).
+      void refreshUserCountry(user.uid);
 
       const cloud = await loadCloudSave(user.uid);
       // Re-read state AFTER the await so progress earned during the load isn't
