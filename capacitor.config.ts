@@ -18,6 +18,14 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: '#FFF4DC',
   },
+  plugins: {
+    Badge: {
+      // Don't keep the icon badge across restarts, and clear it automatically
+      // when the app resumes (native lifecycle — more reliable than JS).
+      persist: false,
+      autoClear: true,
+    },
+  },
 };
 
 export default config;
