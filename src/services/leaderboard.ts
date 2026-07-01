@@ -198,6 +198,56 @@ function writeLocal(entries: LeaderEntry[]): void {
   }
 }
 
+const PENDING_KEY = 'catmatch.pendingScores';
+
+function readPending(): LeaderEntry[] {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    return raw ? (JSON.parse(raw) as LeaderEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePending(list: LeaderEntry[]): void {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-20)));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Writes one entry to Firestore (best-per-doc). Throws on failure/timeout. */
+async function writeEntryToFirestore(entry: LeaderEntry): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error('no db');
+  const ref = doc(db, COLLECTION, `${entry.uid}_${entry.board}_${entry.periodId}`);
+  const snap = await withTimeout(getDoc(ref));
+  const prev = snap.exists() ? (snap.data().score as number) : 0;
+  if (entry.score > prev) {
+    await withTimeout(setDoc(ref, { ...entry, updatedAt: serverTimestamp() }));
+  }
+}
+
+/**
+ * Retries any scores that failed to upload earlier (e.g. a hung connection at
+ * the end of a long run). Safe to call on launch/login and after each submit.
+ */
+export async function flushPendingScores(): Promise<void> {
+  if (!firebaseEnabled) return;
+  const pending = readPending();
+  if (!pending.length) return;
+  const remaining: LeaderEntry[] = [];
+  for (const entry of pending) {
+    try {
+      await writeEntryToFirestore(entry);
+    } catch {
+      remaining.push(entry);
+    }
+  }
+  writePending(remaining);
+}
+
 /** Submits a score, keeping a single best document per (user, board, period). */
 export async function submitScore(params: SubmitParams): Promise<void> {
   const periodId = periodFor(params.scope);
@@ -212,24 +262,25 @@ export async function submitScore(params: SubmitParams): Promise<void> {
   };
 
   if (firebaseEnabled && entry.uid) {
-    const db = getDb();
-    if (db) {
-      try {
-        const ref = doc(
-          db,
-          COLLECTION,
-          `${entry.uid}_${entry.board}_${periodId}`,
-        );
-        const snap = await getDoc(ref);
-        const prev = snap.exists() ? (snap.data().score as number) : 0;
-        if (entry.score > prev) {
-          await setDoc(ref, { ...entry, updatedAt: serverTimestamp() });
-        }
-      } catch (e) {
-        console.warn('submitScore falhou', e);
-      }
-      return;
+    try {
+      await writeEntryToFirestore(entry);
+      // Success — opportunistically push any earlier failed scores too.
+      void flushPendingScores();
+    } catch (e) {
+      // Don't lose the score: queue it and retry on the next launch/submit.
+      console.warn('submitScore falhou, salvando para reenvio', e);
+      const rest = readPending().filter(
+        (p) =>
+          !(
+            p.uid === entry.uid &&
+            p.board === entry.board &&
+            p.periodId === entry.periodId
+          ),
+      );
+      rest.push(entry);
+      writePending(rest);
     }
+    return;
   }
 
   // Local fallback: best per (name, board, period).

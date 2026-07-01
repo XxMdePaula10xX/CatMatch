@@ -53,6 +53,7 @@ import {
   renameUserScores,
   deleteUserScores,
   refreshUserCountry,
+  flushPendingScores,
 } from '../services/leaderboard';
 import {
   onAuthChange,
@@ -861,6 +862,8 @@ export const useGameStore = create<GameState>((set, get) => {
       // Correct any leaderboard entries whose country was saved from the old
       // language-based detection (e.g. GB instead of BR).
       void refreshUserCountry(user.uid);
+      // Re-send any scores that failed to upload earlier (hung connection).
+      void flushPendingScores();
 
       const cloud = await loadCloudSave(user.uid);
       // Re-read state AFTER the await so progress earned during the load isn't
