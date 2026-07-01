@@ -37,6 +37,7 @@ function colCells(board: Board, col: number): Position[] {
 export function applySpecialActivations(
   board: Board,
   matched: Set<string>,
+  availableCats: CatType[] = CAT_TYPES,
 ): Position[] {
   const extra: Position[] = [];
   const add = (cells: Position[]) => {
@@ -72,9 +73,10 @@ export function applySpecialActivations(
         add(areaCells(board, pos, 1));
         break;
       case 'magician': {
-        // Transform up to 5 random cats into one type (excluding cats already
-        // of that type, so the effect is always visible).
-        const target = randomItem(CAT_TYPES) as CatType;
+        // Transform up to 5 random cats into one type from THIS level's palette
+        // (so no off-palette, unmatchable/unrefillable tiles are created),
+        // excluding cats already of that type so the effect is always visible.
+        const target = randomItem(availableCats) as CatType;
         const cats: Tile[] = [];
         for (const row of board) {
           for (const t of row) {

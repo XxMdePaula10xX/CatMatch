@@ -73,7 +73,16 @@ workflows:
           # new-version` is unreliable. Set the Xcode build settings directly —
           # Info.plist resolves $(MARKETING_VERSION)/$(CURRENT_PROJECT_VERSION)
           # at build time, so this is what actually ships.
-          LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          # Only treat a genuine "no builds yet" (empty output) as 0; abort on a
+          # real API error so we never reset to build 1 and ship a duplicate.
+          if LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID"); then
+            LATEST=$(printf '%s' "$LATEST" | tr -d '[:space:]')
+            [ -z "$LATEST" ] && LATEST=0
+          else
+            echo "ERROR: could not fetch latest build number (transient API error?). Aborting." >&2
+            exit 1
+          fi
+          case "$LATEST" in ''|*[!0-9]*) echo "ERROR: non-numeric build number '$LATEST'." >&2; exit 1;; esac
           BUILD_NUMBER=$((LATEST + 1))
           echo "==> Version $APP_VERSION (build $BUILD_NUMBER)"
           sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${APP_VERSION};/g" App.xcodeproj/project.pbxproj
@@ -150,8 +159,8 @@ workflows:
       - name: Build web + sync Android
         script: |
           npm run build
+          npx cap add android
           npx capacitor-assets generate --android || true
-          npx cap add android || true
           npx cap sync android
       - name: Build debug APK
         script: |

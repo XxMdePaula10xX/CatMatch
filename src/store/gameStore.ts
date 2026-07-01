@@ -416,7 +416,12 @@ export const useGameStore = create<GameState>((set, get) => {
       for (const p of matches.matchedPositions) board[p.row][p.col].isMatched = true;
       await commit(board, T.pop);
 
-      const step = resolveMatchStep(board, cascadeLevel, mods);
+      const step = resolveMatchStep(
+        board,
+        cascadeLevel,
+        mods,
+        level.boardConfig.availableCats,
+      );
       if (step.yarnsActivated > 0) {
         soundManager.play('yarn');
         addToast('🧶 Novelo rolando!');
@@ -859,8 +864,13 @@ export const useGameStore = create<GameState>((set, get) => {
         st.bestScore = Math.max(st.bestScore, progress.score);
       });
       soundManager.play('victory');
+      // Bank the floor score into advTotalScore and RESET the live progress, so
+      // a background-triggered submitRunInProgress() (on the relic screen) can't
+      // add this floor's score twice.
       set({
         advTotalScore: total,
+        progress: createProgress(),
+        score: 0,
         relicChoices: offerRelics(3),
         screen: 'relicSelect',
         isResolving: false,

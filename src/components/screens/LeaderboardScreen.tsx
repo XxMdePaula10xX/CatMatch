@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import {
-  levels,
-  DAILY_LEVEL_ID,
-  BLITZ_LEVEL_ID,
-  ADVENTURE_LEVEL_ID,
-} from '../../data/levels';
+import { levels } from '../../data/levels';
 import { weekLabel } from '../../services/periods';
 import {
   getTopScores,
   getPlayerRank,
+  getMyScore,
   playerTag,
   countryFlag,
   type LeaderEntry,
@@ -45,26 +41,15 @@ export function LeaderboardScreen() {
   const goAuth = useGameStore((s) => s.goAuth);
   const goProfile = useGameStore((s) => s.goProfile);
   const rankingRefresh = useGameStore((s) => s.rankingRefresh);
-  const highScores = useGameStore((s) => s.highScores);
 
   const [filter, setFilter] = useState<Filter>('all');
   const [allTime, setAllTime] = useState(false);
   const [entries, setEntries] = useState<LeaderEntry[] | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [myScore, setMyScore] = useState(0);
   const [name, setName] = useState(nickname);
 
   useEffect(() => setName(nickname), [nickname]);
-
-  const myScore =
-    filter === 'all'
-      ? Math.max(0, ...levels.map((l) => highScores[l.id] ?? 0))
-      : filter === 'daily'
-        ? highScores[DAILY_LEVEL_ID] ?? 0
-        : filter === 'blitz'
-          ? highScores[BLITZ_LEVEL_ID] ?? 0
-          : filter === 'adventure'
-            ? highScores[ADVENTURE_LEVEL_ID] ?? 0
-            : highScores[filter] ?? 0;
 
   useEffect(() => {
     let active = true;
@@ -74,13 +59,22 @@ export function LeaderboardScreen() {
     getTopScores(params)
       .then((rows) => active && setEntries(rows))
       .catch(() => active && setEntries([]));
-    getPlayerRank(params, myScore)
-      .then((r) => active && setMyRank(r))
+    // Fetch the player's score for THIS board+period (not the all-time local
+    // high), so the pinned "your position" reflects the current view.
+    getMyScore(params, user?.uid)
+      .then((score) => {
+        if (!active) return undefined;
+        setMyScore(score);
+        return getPlayerRank(params, score);
+      })
+      .then((r) => {
+        if (active && r !== undefined) setMyRank(r);
+      })
       .catch(() => active && setMyRank(null));
     return () => {
       active = false;
     };
-  }, [filter, allTime, myScore, rankingRefresh]);
+  }, [filter, allTime, user, rankingRefresh]);
 
   const isDaily = filter === 'daily';
   const inTop = entries?.some((e) =>

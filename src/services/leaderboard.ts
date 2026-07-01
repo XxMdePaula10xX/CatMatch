@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   getDocs,
   deleteDoc,
@@ -230,11 +231,15 @@ function writeList(key: string, list: LeaderEntry[]): void {
 
 const docKey = (e: LeaderEntry) => `${e.uid}_${e.board}_${e.periodId}`;
 
-/** Adds/replaces an entry in a keyed list, keeping the highest score. */
+/** Adds/replaces an entry in a keyed list, keeping the HIGHEST score. */
 function upsert(key: string, entry: LeaderEntry): void {
-  const list = readList(key).filter((p) => docKey(p) !== docKey(entry));
-  list.push(entry);
-  writeList(key, list);
+  const list = readList(key);
+  const existing = list.find((p) => docKey(p) === docKey(entry));
+  // Never let a lower later score overwrite a higher queued one.
+  if (existing && existing.score >= entry.score) return;
+  const next = list.filter((p) => docKey(p) !== docKey(entry));
+  next.push(entry);
+  writeList(key, next);
 }
 
 function removeFrom(key: string, entry: LeaderEntry): void {
@@ -436,6 +441,35 @@ export async function getPlayerRank(
   );
   const higher = entries.filter((e) => e.score > myScore).length;
   return higher + 1;
+}
+
+/**
+ * The player's own score for the exact board+period being viewed (0 if none).
+ * Used for the pinned "your position" row so it reflects the current week/day
+ * or all-time view, not the all-time local high score.
+ */
+export async function getMyScore(
+  params: QueryParams,
+  uid: string | undefined,
+): Promise<number> {
+  if (!params.board) return 0;
+  const periodId = periodForQuery(params);
+  if (firebaseEnabled && uid) {
+    const db = getDb();
+    if (db) {
+      try {
+        const ref = doc(db, COLLECTION, `${uid}_${params.board}_${periodId}`);
+        const snap = await withTimeout(getDoc(ref));
+        return snap.exists() ? ((snap.data().score as number) ?? 0) : 0;
+      } catch {
+        return 0;
+      }
+    }
+  }
+  const mine = readLocal().find(
+    (e) => e.board === params.board && e.periodId === periodId,
+  );
+  return mine?.score ?? 0;
 }
 
 export function isGlobalLeaderboard(): boolean {

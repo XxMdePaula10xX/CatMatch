@@ -64,6 +64,20 @@ export function onAuthChange(cb: (user: AppUser | null) => void): () => void {
   return onAuthStateChanged(a, (user) => cb(toAppUser(user)));
 }
 
+/**
+ * Rejects after `ms` with a network-error code so a hung request in the iOS
+ * WKWebView surfaces the friendly "sem conexão" message instead of freezing the
+ * button forever.
+ */
+function withTimeout<T>(p: Promise<T>, ms = 12000): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject({ code: 'auth/network-request-failed' }), ms),
+    ),
+  ]);
+}
+
 export async function signUpWithEmail(
   email: string,
   password: string,
@@ -71,7 +85,9 @@ export async function signUpWithEmail(
 ): Promise<void> {
   const a = getAuthInstance();
   if (!a) throw new Error('Firebase não configurado');
-  const cred = await createUserWithEmailAndPassword(a, email, password);
+  const cred = await withTimeout(
+    createUserWithEmailAndPassword(a, email, password),
+  );
   if (displayName) await updateProfile(cred.user, { displayName });
 }
 
@@ -81,13 +97,13 @@ export async function signInWithEmail(
 ): Promise<void> {
   const a = getAuthInstance();
   if (!a) throw new Error('Firebase não configurado');
-  await signInWithEmailAndPassword(a, email, password);
+  await withTimeout(signInWithEmailAndPassword(a, email, password));
 }
 
 export async function resetPassword(email: string): Promise<void> {
   const a = getAuthInstance();
   if (!a) throw new Error('Firebase não configurado');
-  await sendPasswordResetEmail(a, email);
+  await withTimeout(sendPasswordResetEmail(a, email));
 }
 
 export async function signOutUser(): Promise<void> {
@@ -100,17 +116,17 @@ export async function reauthenticate(password: string): Promise<void> {
   const a = getAuthInstance();
   const user = a?.currentUser;
   if (!a || !user) throw new Error('Não conectado');
-  if (user.email) {
-    const cred = EmailAuthProvider.credential(user.email, password);
-    await reauthenticateWithCredential(user, cred);
-  }
+  // Never silently succeed without a real credential check.
+  if (!user.email) throw new Error('Reautenticação indisponível');
+  const cred = EmailAuthProvider.credential(user.email, password);
+  await withTimeout(reauthenticateWithCredential(user, cred));
 }
 
 /** Permanently deletes the current Firebase Auth account. */
 export async function deleteCurrentUser(): Promise<void> {
   const a = getAuthInstance();
   const user = a?.currentUser;
-  if (a && user) await deleteUser(user);
+  if (a && user) await withTimeout(deleteUser(user));
 }
 
 /** Turns a Firebase auth error into a friendly Portuguese message. */

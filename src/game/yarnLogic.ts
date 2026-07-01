@@ -46,6 +46,8 @@ export interface YarnRollResult {
   path: Position[];
   /** Cat types of the cats cleared along the way (for collect objectives). */
   clearedCats: CatType[];
+  /** Positions of those cleared cats, index-aligned with clearedCats. */
+  clearedCatPositions: Position[];
 }
 
 /**
@@ -81,6 +83,7 @@ export function activateYarnBall(
   const cleared: Position[] = [];
   const path: Position[] = [];
   const clearedCats: CatType[] = [];
+  const clearedCatPositions: Position[] = [];
 
   // The yarn leaves its own cell.
   board[yarn.row][yarn.col] = makeEmptyTile(yarn.row, yarn.col);
@@ -105,7 +108,10 @@ export function activateYarnBall(
     // Clear a cat in the path (empty cells are simply passed over).
     path.push({ row: r, col: c });
     if (tile.type === 'cat') {
-      if (tile.catType) clearedCats.push(tile.catType);
+      if (tile.catType) {
+        clearedCats.push(tile.catType);
+        clearedCatPositions.push({ row: r, col: c });
+      }
       board[r][c] = makeEmptyTile(r, c);
       cleared.push({ row: r, col: c });
     }
@@ -113,5 +119,5 @@ export function activateYarnBall(
     c += dCol;
   }
 
-  return { cleared, path, clearedCats };
+  return { cleared, path, clearedCats, clearedCatPositions };
 }

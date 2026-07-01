@@ -71,6 +71,7 @@ export function resolveMatchStep(
   board: Board,
   cascadeLevel: number,
   mods?: StepMods,
+  availableCats?: CatType[],
 ): StepResult {
   const result = findMatches(board);
   if (result.matchedPositions.length === 0) return emptyStep();
@@ -78,7 +79,7 @@ export function resolveMatchStep(
   const matchedSet = new Set(result.matchedPositions.map(key));
 
   // 1. Special cat activations expand the cleared area.
-  const specialExtra = applySpecialActivations(board, matchedSet);
+  const specialExtra = applySpecialActivations(board, matchedSet, availableCats);
   for (const p of specialExtra) matchedSet.add(key(p));
 
   // Cells where a special cat will be created stay on the board (they aren't
@@ -118,10 +119,13 @@ export function resolveMatchStep(
   const yarnActs = findYarnActivations(board, allMatched);
   for (const act of yarnActs) {
     const roll = activateYarnBall(board, act.yarn, act.trigger);
-    // Count cats swept up by the yarn toward collect objectives.
-    for (const cat of roll.clearedCats) {
+    // Count cats swept up by the yarn toward collect objectives — but skip any
+    // that were already in the matched set (step 2 counted them) so a cat on
+    // both a match and a yarn path isn't double-counted.
+    roll.clearedCats.forEach((cat, i) => {
+      if (matchedSet.has(key(roll.clearedCatPositions[i]))) return;
       catsCollected[cat] = (catsCollected[cat] ?? 0) + 1;
-    }
+    });
     yarnsActivated += 1;
   }
 

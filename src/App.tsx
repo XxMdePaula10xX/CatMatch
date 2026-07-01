@@ -23,6 +23,7 @@ export default function App() {
     // Native only: schedule the daily reminder and manage the icon badge.
     setupDailyReminder();
     clearBadge();
+    let cancelled = false;
     let remove: (() => void) | undefined;
     import('@capacitor/app')
       .then(({ App }) =>
@@ -38,10 +39,16 @@ export default function App() {
         }),
       )
       .then((handle) => {
-        remove = () => void handle.remove();
+        // If cleanup already ran before the import resolved, remove immediately
+        // so we never leak a listener (StrictMode / remount).
+        if (cancelled) void handle.remove();
+        else remove = () => void handle.remove();
       })
       .catch(() => {});
-    return () => remove?.();
+    return () => {
+      cancelled = true;
+      remove?.();
+    };
   }, []);
 
   return (
