@@ -28,7 +28,7 @@ workflows:
         XCODE_WORKSPACE: 'ios/App/App.xcworkspace'
         XCODE_SCHEME: 'App'
         APP_STORE_APPLE_ID: 6782692948 # numeric App ID from App Store Connect
-        APP_VERSION: '1.1' # marketing version (CFBundleShortVersionString)
+        APP_VERSION: '1.2' # marketing version (CFBundleShortVersionString)
       node: 20
       xcode: latest
       cocoapods: default
