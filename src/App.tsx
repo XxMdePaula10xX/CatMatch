@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
 import { setupDailyReminder, clearBadge, setBadge } from './services/notifications';
+import { flushPendingScores } from './services/leaderboard';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { LevelSelectScreen } from './components/screens/LevelSelectScreen';
 import { GameScreen } from './components/screens/GameScreen';
@@ -15,17 +16,25 @@ export default function App() {
   const screen = useGameStore((s) => s.screen);
   const showTutorial = useGameStore((s) => s.showTutorial);
 
-  // Native only: schedule the daily play reminder and clear the icon badge on
-  // open / whenever the app comes back to the foreground.
   useEffect(() => {
+    // Retry any scores that failed to upload on a previous session, regardless
+    // of when auth restores.
+    flushPendingScores();
+    // Native only: schedule the daily reminder and manage the icon badge.
     setupDailyReminder();
     clearBadge();
     let remove: (() => void) | undefined;
     import('@capacitor/app')
       .then(({ App }) =>
         App.addListener('appStateChange', ({ isActive }) => {
-          if (isActive) clearBadge();
-          else setBadge();
+          if (isActive) {
+            clearBadge();
+            flushPendingScores();
+          } else {
+            // App is being backgrounded (may be killed) — don't lose the run.
+            useGameStore.getState().saveRunOnExit();
+            setBadge();
+          }
         }),
       )
       .then((handle) => {

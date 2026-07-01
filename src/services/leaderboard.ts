@@ -1,10 +1,10 @@
 import {
   collection,
   doc,
-  getDoc,
   setDoc,
   getDocs,
   deleteDoc,
+  runTransaction,
   query,
   where,
   serverTimestamp,
@@ -199,53 +199,91 @@ function writeLocal(entries: LeaderEntry[]): void {
 }
 
 const PENDING_KEY = 'catmatch.pendingScores';
+// The player's own scores earned while logged out, kept separately from the
+// seeded/local board so they can be migrated to the global ranking on login.
+const MY_GUEST_KEY = 'catmatch.myGuestScores';
 
-function readPending(): LeaderEntry[] {
+function readList(key: string): LeaderEntry[] {
   try {
-    const raw = localStorage.getItem(PENDING_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as LeaderEntry[]) : [];
   } catch {
     return [];
   }
 }
 
-function writePending(list: LeaderEntry[]): void {
+function writeList(key: string, list: LeaderEntry[]): void {
   try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-20)));
+    localStorage.setItem(key, JSON.stringify(list.slice(-40)));
   } catch {
     /* ignore */
   }
 }
 
-/** Writes one entry to Firestore (best-per-doc). Throws on failure/timeout. */
+const docKey = (e: LeaderEntry) => `${e.uid}_${e.board}_${e.periodId}`;
+
+/** Adds/replaces an entry in a keyed list, keeping the highest score. */
+function upsert(key: string, entry: LeaderEntry): void {
+  const list = readList(key).filter((p) => docKey(p) !== docKey(entry));
+  list.push(entry);
+  writeList(key, list);
+}
+
+function removeFrom(key: string, entry: LeaderEntry): void {
+  writeList(
+    key,
+    readList(key).filter((p) => docKey(p) !== docKey(entry)),
+  );
+}
+
+/**
+ * Atomically writes one entry to Firestore, keeping the best score per doc.
+ * Uses a transaction so concurrent submits can't clobber a higher score.
+ * Throws on failure/timeout (caller keeps it queued for retry).
+ */
 async function writeEntryToFirestore(entry: LeaderEntry): Promise<void> {
   const db = getDb();
-  if (!db) throw new Error('no db');
-  const ref = doc(db, COLLECTION, `${entry.uid}_${entry.board}_${entry.periodId}`);
-  const snap = await withTimeout(getDoc(ref));
-  const prev = snap.exists() ? (snap.data().score as number) : 0;
-  if (entry.score > prev) {
-    await withTimeout(setDoc(ref, { ...entry, updatedAt: serverTimestamp() }));
-  }
+  if (!db || !entry.uid) throw new Error('no db/uid');
+  const ref = doc(db, COLLECTION, docKey(entry));
+  await withTimeout(
+    runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const prev = snap.exists() ? (snap.data().score as number) : 0;
+      if (entry.score > prev) {
+        tx.set(ref, { ...entry, updatedAt: serverTimestamp() });
+      }
+    }),
+  );
 }
 
 /**
  * Retries any scores that failed to upload earlier (e.g. a hung connection at
- * the end of a long run). Safe to call on launch/login and after each submit.
+ * the end of a long run). Safe to call on launch/login and after each submit;
+ * no-ops when the queue is empty or Firebase isn't configured.
  */
 export async function flushPendingScores(): Promise<void> {
   if (!firebaseEnabled) return;
-  const pending = readPending();
-  if (!pending.length) return;
-  const remaining: LeaderEntry[] = [];
-  for (const entry of pending) {
+  for (const entry of readList(PENDING_KEY)) {
     try {
       await writeEntryToFirestore(entry);
+      removeFrom(PENDING_KEY, entry); // remove only on confirmed success
     } catch {
-      remaining.push(entry);
+      /* keep for the next flush */
     }
   }
-  writePending(remaining);
+}
+
+/**
+ * Migrates scores earned while logged out into the now-logged-in account, so
+ * nothing is stranded when a guest creates an account.
+ */
+export async function migrateGuestScores(uid: string): Promise<void> {
+  if (!firebaseEnabled || !uid) return;
+  const mine = readList(MY_GUEST_KEY);
+  if (!mine.length) return;
+  for (const g of mine) upsert(PENDING_KEY, { ...g, uid });
+  writeList(MY_GUEST_KEY, []);
+  await flushPendingScores();
 }
 
 /** Submits a score, keeping a single best document per (user, board, period). */
@@ -262,28 +300,24 @@ export async function submitScore(params: SubmitParams): Promise<void> {
   };
 
   if (firebaseEnabled && entry.uid) {
+    // Queue FIRST so an interrupted write (app killed mid-upload) is retried;
+    // remove only after the write is confirmed.
+    upsert(PENDING_KEY, entry);
     try {
       await writeEntryToFirestore(entry);
-      // Success — opportunistically push any earlier failed scores too.
-      void flushPendingScores();
+      removeFrom(PENDING_KEY, entry);
+      void flushPendingScores(); // push any earlier backlog too
     } catch (e) {
-      // Don't lose the score: queue it and retry on the next launch/submit.
-      console.warn('submitScore falhou, salvando para reenvio', e);
-      const rest = readPending().filter(
-        (p) =>
-          !(
-            p.uid === entry.uid &&
-            p.board === entry.board &&
-            p.periodId === entry.periodId
-          ),
-      );
-      rest.push(entry);
-      writePending(rest);
+      console.warn('submitScore falhou — ficará na fila de reenvio', e);
     }
     return;
   }
 
-  // Local fallback: best per (name, board, period).
+  // Guest (not logged in): keep a clean copy of the player's own scores for
+  // migration on login, plus the local board for offline display.
+  if (entry.uid === undefined) {
+    upsert(MY_GUEST_KEY, entry);
+  }
   const entries = readLocal();
   const idx = entries.findIndex(
     (e) =>

@@ -54,6 +54,7 @@ import {
   deleteUserScores,
   refreshUserCountry,
   flushPendingScores,
+  migrateGuestScores,
 } from '../services/leaderboard';
 import {
   onAuthChange,
@@ -183,6 +184,8 @@ interface GameState {
   toggleSound: () => void;
   setNickname: (name: string) => void;
   tick: () => void;
+  /** Persist/submit an in-progress score-attack run (e.g. on app background). */
+  saveRunOnExit: () => void;
   signInEmail: (email: string, password: string) => Promise<string | null>;
   signUpEmail: (
     email: string,
@@ -300,9 +303,13 @@ export const useGameStore = create<GameState>((set, get) => {
     checkAchievements(stats);
   }
 
+  // Guards against pushing empty local data to the cloud before the login
+  // merge has completed (which would clobber existing cloud progress).
+  let cloudReady = false;
+
   function cloudPush() {
     const s = get();
-    if (!s.user) return;
+    if (!s.user || !cloudReady) return;
     const data: CloudData = {
       unlockedLevel: s.unlockedLevel,
       stars: s.starsByLevel,
@@ -729,7 +736,14 @@ export const useGameStore = create<GameState>((set, get) => {
         : { pawBomb: BOOSTER_START, laser: BOOSTER_START },
       advFreeLeft: 0,
     });
-    if (saved) set({ savedGameExists: true });
+    if (saved) {
+      set({ savedGameExists: true });
+    } else {
+      // Fresh game: the single save slot must reflect THIS game, not a stale
+      // save from a different level left over from before.
+      storage.clearSavedGame();
+      set({ savedGameExists: false });
+    }
     if (ddaBonus > 0) addToast(`🐾 +${ddaBonus} movimentos extras!`);
   }
 
@@ -801,6 +815,38 @@ export const useGameStore = create<GameState>((set, get) => {
     cloudPush();
   }
 
+  /**
+   * Submits the current run's partial score when the player quits mid-run
+   * (score-attack / adventure). Best-per-doc means this never lowers a higher
+   * existing score, so it's safe to call on every quit.
+   */
+  function submitRunInProgress() {
+    const s = get();
+    if (s.status !== 'playing' || !s.level) return;
+    const name = s.nickname || s.user?.name || 'Jogador';
+    if (s.mode === 'daily' || s.mode === 'blitz') {
+      if (s.progress.score <= 0) return;
+      const board = s.mode === 'daily' ? 'daily' : 'blitz';
+      const scope: 'daily' | 'weekly' = s.mode === 'daily' ? 'daily' : 'weekly';
+      storage.saveHighScore(s.level.id, s.progress.score);
+      updateStats((st) => {
+        st.bestScore = Math.max(st.bestScore, s.progress.score);
+      });
+      void submitScore({ uid: s.user?.uid, name, score: s.progress.score, board, scope });
+      cloudPush();
+    } else if (s.mode === 'adventure') {
+      const total = s.advTotalScore + s.progress.score;
+      if (total <= 0) return;
+      storage.saveHighScore(ADVENTURE_LEVEL_ID, total);
+      updateStats((st) => {
+        st.bestScore = Math.max(st.bestScore, total);
+        st.advBestDepth = Math.max(st.advBestDepth, s.advDepth);
+      });
+      void submitScore({ uid: s.user?.uid, name, score: total, board: 'adventure', scope: 'weekly' });
+      cloudPush();
+    }
+  }
+
   function handleAdventureFinish(board: Board) {
     const state = get();
     const level = state.level!;
@@ -849,6 +895,7 @@ export const useGameStore = create<GameState>((set, get) => {
   setTimeout(() => {
     onAuthChange(async (user) => {
       if (!user) {
+        cloudReady = false;
         set({ user: null, authReady: true });
         return;
       }
@@ -862,8 +909,9 @@ export const useGameStore = create<GameState>((set, get) => {
       // Correct any leaderboard entries whose country was saved from the old
       // language-based detection (e.g. GB instead of BR).
       void refreshUserCountry(user.uid);
-      // Re-send any scores that failed to upload earlier (hung connection).
-      void flushPendingScores();
+      // Move scores earned while logged out into this account, then re-send any
+      // scores that failed to upload earlier (hung connection).
+      void migrateGuestScores(user.uid).then(() => flushPendingScores());
 
       const cloud = await loadCloudSave(user.uid);
       // Re-read state AFTER the await so progress earned during the load isn't
@@ -892,6 +940,8 @@ export const useGameStore = create<GameState>((set, get) => {
         achievements: merged.achievements,
       });
       void saveCloudSave(user.uid, merged);
+      // Merge done — future cloudPush() calls may now safely write.
+      cloudReady = true;
     });
   }, 0);
 
@@ -954,8 +1004,11 @@ export const useGameStore = create<GameState>((set, get) => {
 
     goHome: () => {
       soundManager.play('button');
+      // Don't lose a score-attack/adventure run if the player quits to Home.
+      submitRunInProgress();
       set({ screen: 'home', savedGameExists: storage.loadSavedGame() !== null });
     },
+    saveRunOnExit: () => submitRunInProgress(),
     goLevelSelect: () => {
       soundManager.play('button');
       set({ screen: 'levelSelect' });

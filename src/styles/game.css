@@ -1153,6 +1153,16 @@
   color: var(--purple);
   font-size: 14px;
 }
+.relic-card__have {
+  color: var(--purple);
+  font-weight: 900;
+}
+.relic-card__stack {
+  color: var(--green-dark, #3a7d23);
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 2px;
+}
 .relic-strip {
   display: flex;
   gap: 6px;

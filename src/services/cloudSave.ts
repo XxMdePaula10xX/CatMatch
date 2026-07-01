@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { getDb, firebaseEnabled } from './firebase';
-import type { Stats } from '../data/achievements';
+import { createStats, type Stats } from '../data/achievements';
 
 const COLLECTION = 'saves';
 
@@ -64,9 +64,11 @@ export function mergeCloud(local: CloudData, cloud: CloudData): CloudData {
     const key = Number(k);
     highScores[key] = Math.max(highScores[key] ?? 0, v);
   }
-  const stats: Stats = { ...local.stats };
+  // Iterate the full stats schema (not just one side's keys) so a field
+  // present on only one side is never dropped.
+  const stats = createStats();
   for (const k of Object.keys(stats) as (keyof Stats)[]) {
-    stats[k] = Math.max(local.stats[k] ?? 0, cloud.stats?.[k] ?? 0);
+    stats[k] = Math.max(local.stats?.[k] ?? 0, cloud.stats?.[k] ?? 0);
   }
   const achievements = Array.from(
     new Set([...(local.achievements ?? []), ...(cloud.achievements ?? [])]),
