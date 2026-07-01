@@ -19,12 +19,13 @@ import { Button } from '../ui/Button';
 
 type Filter = 'daily' | 'blitz' | 'adventure' | 'all' | number;
 
-function paramsFor(filter: Filter): QueryParams {
-  if (filter === 'daily') return { board: 'daily', scope: 'daily' };
-  if (filter === 'blitz') return { board: 'blitz', scope: 'weekly' };
-  if (filter === 'adventure') return { board: 'adventure', scope: 'weekly' };
-  if (filter === 'all') return { scope: 'weekly' };
-  return { board: `lvl${filter}`, scope: 'weekly' };
+function paramsFor(filter: Filter, allTime: boolean): QueryParams {
+  if (filter === 'daily') return { board: 'daily', scope: 'daily', allTime };
+  if (filter === 'blitz') return { board: 'blitz', scope: 'weekly', allTime };
+  if (filter === 'adventure')
+    return { board: 'adventure', scope: 'weekly', allTime };
+  if (filter === 'all') return { scope: 'weekly', allTime };
+  return { board: `lvl${filter}`, scope: 'weekly', allTime };
 }
 
 function boardLabel(board: string): string {
@@ -47,6 +48,7 @@ export function LeaderboardScreen() {
   const highScores = useGameStore((s) => s.highScores);
 
   const [filter, setFilter] = useState<Filter>('all');
+  const [allTime, setAllTime] = useState(false);
   const [entries, setEntries] = useState<LeaderEntry[] | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
   const [name, setName] = useState(nickname);
@@ -68,7 +70,7 @@ export function LeaderboardScreen() {
     let active = true;
     setEntries(null);
     setMyRank(null);
-    const params = paramsFor(filter);
+    const params = paramsFor(filter, allTime);
     getTopScores(params)
       .then((rows) => active && setEntries(rows))
       .catch(() => active && setEntries([]));
@@ -78,7 +80,7 @@ export function LeaderboardScreen() {
     return () => {
       active = false;
     };
-  }, [filter, myScore, rankingRefresh]);
+  }, [filter, allTime, myScore, rankingRefresh]);
 
   const isDaily = filter === 'daily';
   const inTop = entries?.some((e) =>
@@ -144,12 +146,27 @@ export function LeaderboardScreen() {
         )}
       </div>
 
+      <div className="period-toggle">
+        <button
+          className={`period-toggle__btn ${!allTime ? 'on' : ''}`}
+          onClick={() => setAllTime(false)}
+        >
+          🗓️ Esta semana
+        </button>
+        <button
+          className={`period-toggle__btn ${allTime ? 'on' : ''}`}
+          onClick={() => setAllTime(true)}
+        >
+          👑 Todos os tempos
+        </button>
+      </div>
+
       <div className="filters">
         <button
           className={`filter ${filter === 'daily' ? 'on' : ''}`}
           onClick={() => setFilter('daily')}
         >
-          📅 Diário
+          {allTime ? '📅 Melhor dia' : '📅 Diário'}
         </button>
         <button
           className={`filter ${filter === 'blitz' ? 'on' : ''}`}
@@ -188,7 +205,11 @@ export function LeaderboardScreen() {
       </div>
 
       <p className="center muted" style={{ margin: 0, fontSize: 12 }}>
-        {isDaily ? '📅 Ranking de hoje' : `🗓️ ${weekLabel()} · zera toda semana`}
+        {allTime
+          ? '👑 Recordes de todos os tempos · nunca zera'
+          : isDaily
+            ? '📅 Ranking de hoje'
+            : `🗓️ ${weekLabel()} · zera toda semana`}
       </p>
 
       <div className="panel">

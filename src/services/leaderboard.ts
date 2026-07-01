@@ -40,13 +40,21 @@ export interface QueryParams {
   /** Omit for the "Geral" view (all weekly boards). */
   board?: string;
   scope: Scope;
+  /** When true, query the all-time (never-resetting) ranking. */
+  allTime?: boolean;
 }
 
 const LOCAL_KEY = 'catmatch.leaderboard';
 const COLLECTION = 'scores';
+/** Special period bucket for the all-time ranking (never resets). */
+const ALLTIME = 'all';
 
 function periodFor(scope: Scope): string {
   return scope === 'daily' ? getDayId() : getWeekId();
+}
+
+function periodForQuery(params: QueryParams): string {
+  return params.allTime ? ALLTIME : periodFor(params.scope);
 }
 
 /**
@@ -286,26 +294,35 @@ export async function migrateGuestScores(uid: string): Promise<void> {
   await flushPendingScores();
 }
 
-/** Submits a score, keeping a single best document per (user, board, period). */
+/**
+ * Submits a score, keeping a single best document per (user, board, period).
+ * Writes TWO entries: the current period (weekly/daily) and the all-time
+ * ranking (period "all"), so both leaderboards stay up to date.
+ */
 export async function submitScore(params: SubmitParams): Promise<void> {
-  const periodId = periodFor(params.scope);
-  const entry: LeaderEntry = {
+  const base = {
     name: params.name,
     score: params.score,
     board: params.board,
-    periodId,
     scope: params.scope,
     uid: params.uid,
     country: getCountryCode(),
   };
+  const periodId = periodFor(params.scope);
+  const entries: LeaderEntry[] = [
+    { ...base, periodId },
+    { ...base, periodId: ALLTIME },
+  ];
 
-  if (firebaseEnabled && entry.uid) {
+  if (firebaseEnabled && params.uid) {
     // Queue FIRST so an interrupted write (app killed mid-upload) is retried;
     // remove only after the write is confirmed.
-    upsert(PENDING_KEY, entry);
+    for (const entry of entries) upsert(PENDING_KEY, entry);
     try {
-      await writeEntryToFirestore(entry);
-      removeFrom(PENDING_KEY, entry);
+      for (const entry of entries) {
+        await writeEntryToFirestore(entry);
+        removeFrom(PENDING_KEY, entry);
+      }
       void flushPendingScores(); // push any earlier backlog too
     } catch (e) {
       console.warn('submitScore falhou — ficará na fila de reenvio', e);
@@ -315,22 +332,22 @@ export async function submitScore(params: SubmitParams): Promise<void> {
 
   // Guest (not logged in): keep a clean copy of the player's own scores for
   // migration on login, plus the local board for offline display.
-  if (entry.uid === undefined) {
-    upsert(MY_GUEST_KEY, entry);
+  const local = readLocal();
+  for (const entry of entries) {
+    if (params.uid === undefined) upsert(MY_GUEST_KEY, entry);
+    const idx = local.findIndex(
+      (e) =>
+        e.name === entry.name &&
+        e.board === entry.board &&
+        e.periodId === entry.periodId,
+    );
+    if (idx >= 0) {
+      if (entry.score > local[idx].score) local[idx] = { ...entry };
+    } else {
+      local.push({ ...entry, createdAt: Date.now() });
+    }
   }
-  const entries = readLocal();
-  const idx = entries.findIndex(
-    (e) =>
-      e.name === entry.name &&
-      e.board === entry.board &&
-      e.periodId === periodId,
-  );
-  if (idx >= 0) {
-    if (entry.score > entries[idx].score) entries[idx] = { ...entry };
-  } else {
-    entries.push({ ...entry, createdAt: Date.now() });
-  }
-  writeLocal(entries);
+  writeLocal(local);
 }
 
 function dedupeByUser(entries: LeaderEntry[]): LeaderEntry[] {
@@ -348,7 +365,7 @@ export async function getTopScores(
   params: QueryParams,
   max = 25,
 ): Promise<LeaderEntry[]> {
-  const periodId = periodFor(params.scope);
+  const periodId = periodForQuery(params);
 
   if (firebaseEnabled) {
     const db = getDb();
@@ -395,7 +412,7 @@ export async function getPlayerRank(
   // view aggregates per-user bests, so we skip the pinned row there in all
   // modes for consistency.
   if (!params.board) return null;
-  const periodId = periodFor(params.scope);
+  const periodId = periodForQuery(params);
 
   if (firebaseEnabled) {
     const db = getDb();
