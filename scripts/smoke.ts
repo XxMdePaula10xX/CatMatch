@@ -4,7 +4,7 @@ import { findMatches } from '../src/game/matchDetector';
 import { resolveMatchStep } from '../src/game/cascadeResolver';
 import { applyGravity, refillBoard } from '../src/game/gravity';
 import { swapTiles, findHint, isValidSwap } from '../src/game/swapLogic';
-import { levels, makeAdventureFloor } from '../src/data/levels';
+import { levels, makeAdventureFloor, TOTAL_LEVELS } from '../src/data/levels';
 import { aggregateRelics, offerRelics } from '../src/data/relics';
 import { buildDailyShare } from '../src/services/share';
 import { cloneBoard } from '../src/game/utils';
@@ -28,8 +28,11 @@ function countTiles(board: Board) {
   return { cats, empty };
 }
 
-// 1. Every level (all 60) is well-formed and its objectives are feasible.
-assert(levels.length === 60, `there are 60 levels (got ${levels.length})`);
+// 1. Every level is well-formed and its objectives are feasible.
+assert(
+  levels.length === TOTAL_LEVELS,
+  `there are ${TOTAL_LEVELS} levels (got ${levels.length})`,
+);
 let prevHardness = 0;
 for (const level of levels) {
   const board = createBoard(level.boardConfig);

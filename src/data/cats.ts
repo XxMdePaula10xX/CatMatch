@@ -63,8 +63,9 @@ export const CATS: Record<CatType, CatDef> = {
     id: 'tabby',
     name: 'Gato Rajado',
     personality: 'Bagunceiro',
-    color: '#A8B0BC',
-    colorDark: '#727B8A',
+    // Vivid rose halo so it stands out from the pale white/gray/cream cats.
+    color: '#FF88B8',
+    colorDark: '#E0568F',
     emoji: '😽',
     power: 'Empurra uma peça próxima',
   },

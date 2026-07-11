@@ -39,25 +39,26 @@ export async function setupDailyReminder(): Promise<void> {
   }
 }
 
-/** Shows a "1" on the app icon as a gentle come-back nudge while away. */
-export async function setBadge(): Promise<void> {
-  if (!isNativeApp()) return;
-  try {
-    const { Badge } = await import('@capawesome/capacitor-badge');
-    const { isSupported } = await Badge.isSupported();
-    if (isSupported) await Badge.set({ count: 1 });
-  } catch {
-    /* ignore */
-  }
-}
-
-/** Clears the app icon badge and any delivered reminders (call when app opens). */
+/**
+ * Clears the app icon badge and delivered reminders. Call on launch and every
+ * time the app comes to the foreground. Tries both badge APIs because some iOS
+ * versions clear reliably only via set(0) and not clear() (which left users
+ * with a stuck "1").
+ */
 export async function clearBadge(): Promise<void> {
   if (!isNativeApp()) return;
   try {
     const { Badge } = await import('@capawesome/capacitor-badge');
-    const { isSupported } = await Badge.isSupported();
-    if (isSupported) await Badge.clear();
+    try {
+      await Badge.set({ count: 0 });
+    } catch {
+      /* ignore */
+    }
+    try {
+      await Badge.clear();
+    } catch {
+      /* ignore */
+    }
   } catch {
     /* ignore */
   }

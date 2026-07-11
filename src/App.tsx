@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
-import { setupDailyReminder, clearBadge, setBadge } from './services/notifications';
+import { setupDailyReminder, clearBadge } from './services/notifications';
 import { flushPendingScores } from './services/leaderboard';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { LevelSelectScreen } from './components/screens/LevelSelectScreen';
@@ -29,12 +29,12 @@ export default function App() {
       .then(({ App }) =>
         App.addListener('appStateChange', ({ isActive }) => {
           if (isActive) {
+            // Belt-and-suspenders: clear the badge whenever we return.
             clearBadge();
             flushPendingScores();
           } else {
             // App is being backgrounded (may be killed) — don't lose the run.
             useGameStore.getState().saveRunOnExit();
-            setBadge();
           }
         }),
       )

@@ -11,7 +11,7 @@ export const ALL_CATS: CatType[] = [
   'tabby',
 ];
 
-export const TOTAL_LEVELS = 60;
+export const TOTAL_LEVELS = 110;
 
 /**
  * The five curated tutorial levels from the PRD. Levels 6–60 are generated
@@ -108,6 +108,11 @@ const WORLD_NAMES = [
   'Beco Travesso',
   'Parque Felino',
   'Castelo Real',
+  'Cidade dos Gatos',
+  'Floresta Ronronante',
+  'Praia Felina',
+  'Montanha Miau',
+  'Lua dos Gatos',
 ];
 
 type Archetype =
@@ -180,7 +185,11 @@ function genLevel(i: number): Level {
 
   switch (primary) {
     case 'score':
-      objectives.push({ type: 'score', target: round50(400 + i * 140) });
+      // Cap keeps very high levels hard-but-beatable in ~18-22 moves.
+      objectives.push({
+        type: 'score',
+        target: round50(Math.min(400 + i * 140, 12000)),
+      });
       moveBonus = 2;
       break;
     case 'collectCat': {
@@ -188,7 +197,7 @@ function genLevel(i: number): Level {
       objectives.push({
         type: 'collectCat',
         catType: cat,
-        target: 8 + Math.floor(i / 4),
+        target: Math.min(8 + Math.floor(i / 4), 24),
       });
       break;
     }
@@ -219,10 +228,16 @@ function genLevel(i: number): Level {
 
   // Boss milestones add a score goal; later levels stack a secondary goal.
   if (isBoss) {
-    objectives.push({ type: 'score', target: round50(1500 + i * 150) });
+    objectives.push({
+      type: 'score',
+      target: round50(Math.min(1500 + i * 150, 14000)),
+    });
     moveBonus += 3;
   } else if (i >= 22 && primary !== 'score') {
-    objectives.push({ type: 'score', target: round50(500 + i * 120) });
+    objectives.push({
+      type: 'score',
+      target: round50(Math.min(500 + i * 120, 10000)),
+    });
     moveBonus += 2;
   }
 
