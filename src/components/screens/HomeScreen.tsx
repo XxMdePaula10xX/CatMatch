@@ -34,7 +34,7 @@ export function HomeScreen() {
         </span>
         <h1 className="logo__title">
           <span>Cat</span>
-          <span>Match</span>
+          <span>Match 3</span>
         </h1>
         <div className="logo__sub">Match-3 de Gatinhos</div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CatType, SpecialCatType } from '../../game/types';
 import { CATS, SPECIAL_CATS, CAT_IMAGE, SPECIAL_IMAGE } from '../../data/cats';
 
@@ -21,9 +21,12 @@ export function CatTile({ catType, specialType }: CatTileProps) {
   const emoji = specialType ? SPECIAL_CATS[specialType].emoji : def.emoji;
   const imgFailed = failedSrc === src;
 
-  const background = `radial-gradient(circle at 35% 28%, ${lighten(
-    def.color,
-  )}, ${def.color} 60%, ${def.colorDark})`;
+  // Memoized: the gradient only depends on the cat type, not on re-renders.
+  const background = useMemo(
+    () =>
+      `radial-gradient(circle at 35% 28%, ${lighten(def.color)}, ${def.color} 60%, ${def.colorDark})`,
+    [def.color, def.colorDark],
+  );
 
   return (
     <div className="tile__inner" style={{ background }}>

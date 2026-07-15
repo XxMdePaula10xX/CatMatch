@@ -159,6 +159,20 @@ export function AuthScreen() {
             ? 'Já tem conta? Toque em "Entrar" acima.'
             : 'Novo por aqui? Toque em "Criar conta" acima.'}
         </p>
+        {isSignup && (
+          <p className="muted center" style={{ fontSize: 11, margin: 0 }}>
+            Ao criar uma conta, você aceita nossa{' '}
+            <a
+              href="/privacy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="auth-link"
+            >
+              Política de Privacidade
+            </a>
+            .
+          </p>
+        )}
       </div>
     </div>
   );

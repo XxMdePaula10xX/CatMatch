@@ -83,37 +83,37 @@ export interface SpecialCatDef {
 export const SPECIAL_CATS: Record<SpecialCatType, SpecialCatDef> = {
   ninjaH: {
     id: 'ninjaH',
-    name: 'Ninja Cat',
+    name: 'Gato Ninja',
     emoji: '🥷',
     description: 'Limpa uma linha inteira',
   },
   ninjaV: {
     id: 'ninjaV',
-    name: 'Ninja Cat',
+    name: 'Gato Ninja',
     emoji: '🥷',
     description: 'Limpa uma coluna inteira',
   },
   sleepy: {
     id: 'sleepy',
-    name: 'Sleepy Cat',
+    name: 'Gato Soneca',
     emoji: '😴',
     description: 'Dorme 1 turno e limpa uma área 3x3',
   },
   magician: {
     id: 'magician',
-    name: 'Magician Cat',
+    name: 'Gato Mágico',
     emoji: '🧙',
     description: 'Transforma várias peças em um tipo',
   },
   angry: {
     id: 'angry',
-    name: 'Angry Cat',
+    name: 'Gato Bravo',
     emoji: '😾',
     description: 'Explode uma área 3x3',
   },
   lucky: {
     id: 'lucky',
-    name: 'Lucky Black Cat',
+    name: 'Gato da Sorte',
     emoji: '🍀',
     description: 'Remove obstáculos ou coleta itens',
   },

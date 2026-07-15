@@ -34,7 +34,7 @@ export const BOOSTERS: Record<BoosterId, BoosterDef> = {
   giantPaw: {
     id: 'giantPaw',
     name: 'Pata Gigante',
-    emoji: '🐾',
+    emoji: '🖐️',
     description: 'Remove uma coluna inteira.',
     implemented: false,
   },

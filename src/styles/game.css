@@ -27,21 +27,22 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #b69468;
+  color: #7c5a38;
 }
 .stat__value {
   font-size: 24px;
   font-weight: 900;
   line-height: 1.1;
 }
+/* Darker shades of the brand colors so the large numbers meet contrast. */
 .stat--moves .stat__value {
-  color: var(--blue);
+  color: #1f74b8;
 }
 .stat--score .stat__value {
   color: var(--purple);
 }
 .stat--time .stat__value {
-  color: var(--pink);
+  color: #d23f7d;
 }
 .stat--low .stat__value {
   color: var(--red);
@@ -228,9 +229,10 @@
   align-items: center;
   justify-content: center;
   padding: 3px;
-  /* Animate the position transform (compositor-friendly) for smooth falls. */
+  /* Animate the position transform (compositor-friendly) for smooth falls.
+     No persistent will-change: keeping 64 layers alive all session costs more
+     memory than it saves; the transition still composites during animation. */
   transition: transform 0.22s cubic-bezier(0.5, 0, 0.5, 1);
-  will-change: transform;
   z-index: 2;
 }
 .tile__inner {
@@ -895,15 +897,15 @@
 /* Play-mode popup */
 .modal__close {
   position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 34px;
-  height: 34px;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
   border: none;
   border-radius: 999px;
   background: rgba(107, 63, 36, 0.1);
   color: var(--brown);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1131,10 +1133,14 @@
   margin: 8px 0;
 }
 .tutorial__dots .dot {
-  width: 9px;
-  height: 9px;
+  /* 44px hit target with a small visible dot (content-box + padding). */
+  box-sizing: content-box;
+  width: 10px;
+  height: 10px;
+  padding: 17px;
   border-radius: 999px;
   background: #e6d3ac;
+  background-clip: content-box;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
 }
