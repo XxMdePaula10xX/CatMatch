@@ -175,9 +175,9 @@ export const CAT_IMAGE: Record<CatType, string> = {
   orange: '/cats/orange.svg',
   gray: '/cats/gray.svg',
   white: '/cats/white.svg',
-  black: '/cats/black.svg',
-  siamese: '/cats/siamese.svg',
-  tabby: '/cats/tabby.svg',
+  black: '/cats/black.png',
+  siamese: '/cats/siamese.png',
+  tabby: '/cats/tabby.png',
 };
 
 export const SPECIAL_IMAGE: Record<SpecialCatType, string> = {
