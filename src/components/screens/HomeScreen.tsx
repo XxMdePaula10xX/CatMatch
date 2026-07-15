@@ -2,8 +2,18 @@ import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { CATS, CAT_TYPES } from '../../data/cats';
+import { CATS, CAT_TYPES, CAT_IMAGE } from '../../data/cats';
 import { useT, useLang, setLang, tr } from '../../i18n';
+
+/** Soft pastel tint of a cat color for the gallery card background. */
+function tint(hex: string): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * 0.72);
+  const r = mix((n >> 16) & 255);
+  const g = mix((n >> 8) & 255);
+  const b = mix(n & 255);
+  return `rgb(${r},${g},${b})`;
+}
 
 /** Title screen: logo, mascot, and a streamlined main menu. */
 export function HomeScreen() {
@@ -49,9 +59,12 @@ export function HomeScreen() {
       </div>
 
       <div className="logo">
-        <span className="logo__cat" role="img" aria-label="gato mascote">
-          🐱
-        </span>
+        <img
+          className="logo__cat"
+          src="/cats/mascot.svg"
+          alt="Cat Match 3"
+          draggable={false}
+        />
         <h1 className="logo__title">
           <span>Cat</span>
           <span>Match 3</span>
@@ -65,10 +78,18 @@ export function HomeScreen() {
             <div
               key={c}
               className="gallery__item"
-              style={{ background: CATS[c].color }}
+              style={{
+                background: `linear-gradient(160deg, ${tint(CATS[c].color)}, #fffdf8)`,
+                borderColor: CATS[c].color,
+              }}
               title={`${tr(CATS[c].name)} — ${tr(CATS[c].personality)}`}
             >
-              {CATS[c].emoji}
+              <img
+                className="gallery__img"
+                src={CAT_IMAGE[c]}
+                alt={tr(CATS[c].name)}
+                draggable={false}
+              />
             </div>
           ))}
         </div>

@@ -171,17 +171,19 @@ button {
   margin-top: 8px;
 }
 .logo__title {
-  font-size: 64px;
+  font-size: 62px;
   font-weight: 900;
-  line-height: 0.9;
+  line-height: 0.86;
   margin: 0;
-  background: linear-gradient(180deg, #ffe27a, var(--yellow) 40%, #ffae3b);
+  letter-spacing: 0.5px;
+  background: linear-gradient(180deg, #ffcf5e 0%, #ff9f43 52%, #ff7a9c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  -webkit-text-stroke: 3px #fff;
-  filter: drop-shadow(0 4px 0 rgba(107, 63, 36, 0.25));
-  letter-spacing: 1px;
+  /* Brown sticker outline + soft drop, no washed-out white stroke. */
+  filter: drop-shadow(2px 0 0 #6b3f24) drop-shadow(-2px 0 0 #6b3f24)
+    drop-shadow(0 2px 0 #6b3f24) drop-shadow(0 -2px 0 #6b3f24)
+    drop-shadow(0 6px 5px rgba(107, 63, 36, 0.28));
 }
 .logo__title span {
   display: block;
@@ -198,7 +200,10 @@ button {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
 }
 .logo__cat {
-  font-size: 70px;
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 6px rgba(107, 63, 36, 0.22));
   animation: bob 2.4s ease-in-out infinite;
 }
 @keyframes bob {

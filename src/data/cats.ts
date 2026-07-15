@@ -172,12 +172,12 @@ export const SPECIAL_CREATE: Record<SpecialCatType, LStr> = {
  * See `public/cats/README.md`.
  */
 export const CAT_IMAGE: Record<CatType, string> = {
-  orange: '/cats/orange.png',
-  gray: '/cats/gray.png',
-  white: '/cats/white.png',
-  black: '/cats/black.png',
-  siamese: '/cats/siamese.png',
-  tabby: '/cats/tabby.png',
+  orange: '/cats/orange.svg',
+  gray: '/cats/gray.svg',
+  white: '/cats/white.svg',
+  black: '/cats/black.svg',
+  siamese: '/cats/siamese.svg',
+  tabby: '/cats/tabby.svg',
 };
 
 export const SPECIAL_IMAGE: Record<SpecialCatType, string> = {
