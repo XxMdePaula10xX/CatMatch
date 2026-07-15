@@ -61,7 +61,7 @@ export function HomeScreen() {
       <div className="logo">
         <img
           className="logo__cat"
-          src="/cats/mascot.svg"
+          src="/cats/mascot.png"
           alt="Cat Match 3"
           draggable={false}
         />
