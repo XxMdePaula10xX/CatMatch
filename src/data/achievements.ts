@@ -1,3 +1,5 @@
+import type { LStr } from '../i18n';
+
 /** Cumulative player stats that drive achievements (persisted + cloud-synced). */
 export interface Stats {
   wins: number;
@@ -28,8 +30,8 @@ export function createStats(): Stats {
 
 export interface AchievementDef {
   id: string;
-  name: string;
-  description: string;
+  name: LStr;
+  description: LStr;
   icon: string;
   /** Whether the stats satisfy this achievement. */
   done: (s: Stats) => boolean;
@@ -42,80 +44,95 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'firstWin',
-    name: 'Primeiro Miado',
-    description: 'Vença a sua primeira fase.',
+    name: { pt: 'Primeiro Miado', en: 'First Meow' },
+    description: { pt: 'Vença a sua primeira fase.', en: 'Win your first level.' },
     icon: '🐾',
     done: (s) => s.wins >= 1,
     progress: (s) => clamp01(s.wins / 1),
   },
   {
     id: 'combo5',
-    name: 'Combo Felino',
-    description: 'Faça um combo x5 em cadeia.',
+    name: { pt: 'Combo Felino', en: 'Feline Combo' },
+    description: { pt: 'Faça um combo x5 em cadeia.', en: 'Chain an x5 combo.' },
     icon: '🔥',
     done: (s) => s.maxCombo >= 5,
     progress: (s) => clamp01(s.maxCombo / 5),
   },
   {
     id: 'boxes100',
-    name: 'Destruidor de Caixas',
-    description: 'Quebre 100 caixas de papelão.',
+    name: { pt: 'Destruidor de Caixas', en: 'Box Destroyer' },
+    description: {
+      pt: 'Quebre 100 caixas de papelão.',
+      en: 'Break 100 cardboard boxes.',
+    },
     icon: '📦',
     done: (s) => s.boxesBroken >= 100,
     progress: (s) => clamp01(s.boxesBroken / 100),
   },
   {
     id: 'yarn25',
-    name: 'Rei do Novelo',
-    description: 'Ative 25 novelos de lã.',
+    name: { pt: 'Rei do Novelo', en: 'Yarn King' },
+    description: { pt: 'Ative 25 novelos de lã.', en: 'Activate 25 balls of yarn.' },
     icon: '🧶',
     done: (s) => s.yarns >= 25,
     progress: (s) => clamp01(s.yarns / 25),
   },
   {
     id: 'boss5',
-    name: 'Desperta-Chefe',
-    description: 'Carregue o Gato Chefe 5 vezes.',
+    name: { pt: 'Desperta-Chefe', en: 'Boss Waker' },
+    description: {
+      pt: 'Carregue o Gato Chefe 5 vezes.',
+      en: 'Charge the Boss Cat 5 times.',
+    },
     icon: '👑',
     done: (s) => s.bossCharges >= 5,
     progress: (s) => clamp01(s.bossCharges / 5),
   },
   {
     id: 'speedrun',
-    name: 'Gato Veloz',
-    description: 'Conclua uma fase em menos de 60s.',
+    name: { pt: 'Gato Veloz', en: 'Speedy Cat' },
+    description: {
+      pt: 'Conclua uma fase em menos de 60s.',
+      en: 'Finish a level in under 60s.',
+    },
     icon: '⚡',
     done: (s) => s.fastWins >= 1,
     progress: (s) => clamp01(s.fastWins / 1),
   },
   {
     id: 'score10k',
-    name: 'Pontuação Lendária',
-    description: 'Faça 10.000 pontos numa partida.',
+    name: { pt: 'Pontuação Lendária', en: 'Legendary Score' },
+    description: {
+      pt: 'Faça 10.000 pontos numa partida.',
+      en: 'Score 10,000 points in one game.',
+    },
     icon: '⭐',
     done: (s) => s.bestScore >= 10000,
     progress: (s) => clamp01(s.bestScore / 10000),
   },
   {
     id: 'levels10',
-    name: 'Pegando o Jeito',
-    description: 'Conclua 10 fases.',
+    name: { pt: 'Pegando o Jeito', en: 'Getting the Hang of It' },
+    description: { pt: 'Conclua 10 fases.', en: 'Complete 10 levels.' },
     icon: '🐈',
     done: (s) => s.levelsCompleted >= 10,
     progress: (s) => clamp01(s.levelsCompleted / 10),
   },
   {
     id: 'allLevels',
-    name: 'Casa Cheia',
-    description: 'Conclua 30 fases.',
+    name: { pt: 'Casa Cheia', en: 'Full House' },
+    description: { pt: 'Conclua 30 fases.', en: 'Complete 30 levels.' },
     icon: '🏆',
     done: (s) => s.levelsCompleted >= 30,
     progress: (s) => clamp01(s.levelsCompleted / 30),
   },
   {
     id: 'adventure5',
-    name: 'Explorador Felino',
-    description: 'Chegue ao Andar 5 na Aventura.',
+    name: { pt: 'Explorador Felino', en: 'Feline Explorer' },
+    description: {
+      pt: 'Chegue ao Andar 5 na Aventura.',
+      en: 'Reach Floor 5 in Adventure.',
+    },
     icon: '🗺️',
     done: (s) => s.advBestDepth >= 5,
     progress: (s) => clamp01(s.advBestDepth / 5),
@@ -124,104 +141,128 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // ---- extra goals ----
   {
     id: 'wins10',
-    name: 'Ronronando',
-    description: 'Vença 10 partidas.',
+    name: { pt: 'Ronronando', en: 'Purring Along' },
+    description: { pt: 'Vença 10 partidas.', en: 'Win 10 games.' },
     icon: '😺',
     done: (s) => s.wins >= 10,
     progress: (s) => clamp01(s.wins / 10),
   },
   {
     id: 'wins50',
-    name: 'Vida de Gato',
-    description: 'Vença 50 partidas.',
+    name: { pt: 'Vida de Gato', en: "Cat's Life" },
+    description: { pt: 'Vença 50 partidas.', en: 'Win 50 games.' },
     icon: '😻',
     done: (s) => s.wins >= 50,
     progress: (s) => clamp01(s.wins / 50),
   },
   {
     id: 'combo8',
-    name: 'Furacão Felino',
-    description: 'Faça um combo x8 em cadeia.',
+    name: { pt: 'Furacão Felino', en: 'Feline Hurricane' },
+    description: { pt: 'Faça um combo x8 em cadeia.', en: 'Chain an x8 combo.' },
     icon: '🌪️',
     done: (s) => s.maxCombo >= 8,
     progress: (s) => clamp01(s.maxCombo / 8),
   },
   {
     id: 'combo10',
-    name: 'Combo Lendário',
-    description: 'Faça um combo x10 em cadeia.',
+    name: { pt: 'Combo Lendário', en: 'Legendary Combo' },
+    description: { pt: 'Faça um combo x10 em cadeia.', en: 'Chain an x10 combo.' },
     icon: '💥',
     done: (s) => s.maxCombo >= 10,
     progress: (s) => clamp01(s.maxCombo / 10),
   },
   {
     id: 'boxes500',
-    name: 'Triturador de Caixas',
-    description: 'Quebre 500 caixas de papelão.',
+    name: { pt: 'Triturador de Caixas', en: 'Box Shredder' },
+    description: {
+      pt: 'Quebre 500 caixas de papelão.',
+      en: 'Break 500 cardboard boxes.',
+    },
     icon: '🪣',
     done: (s) => s.boxesBroken >= 500,
     progress: (s) => clamp01(s.boxesBroken / 500),
   },
   {
     id: 'yarn100',
-    name: 'Fábrica de Novelos',
-    description: 'Ative 100 novelos de lã.',
+    name: { pt: 'Fábrica de Novelos', en: 'Yarn Factory' },
+    description: {
+      pt: 'Ative 100 novelos de lã.',
+      en: 'Activate 100 balls of yarn.',
+    },
     icon: '🎀',
     done: (s) => s.yarns >= 100,
     progress: (s) => clamp01(s.yarns / 100),
   },
   {
     id: 'boss25',
-    name: 'Domador de Chefes',
-    description: 'Carregue o Gato Chefe 25 vezes.',
+    name: { pt: 'Domador de Chefes', en: 'Boss Tamer' },
+    description: {
+      pt: 'Carregue o Gato Chefe 25 vezes.',
+      en: 'Charge the Boss Cat 25 times.',
+    },
     icon: '🦁',
     done: (s) => s.bossCharges >= 25,
     progress: (s) => clamp01(s.bossCharges / 25),
   },
   {
     id: 'speed10',
-    name: 'Pata Veloz',
-    description: 'Conclua 10 fases em menos de 60s.',
+    name: { pt: 'Pata Veloz', en: 'Swift Paw' },
+    description: {
+      pt: 'Conclua 10 fases em menos de 60s.',
+      en: 'Finish 10 levels in under 60s.',
+    },
     icon: '🏎️',
     done: (s) => s.fastWins >= 10,
     progress: (s) => clamp01(s.fastWins / 10),
   },
   {
     id: 'score25k',
-    name: 'Mestre dos Pontos',
-    description: 'Faça 25.000 pontos numa partida.',
+    name: { pt: 'Mestre dos Pontos', en: 'Score Master' },
+    description: {
+      pt: 'Faça 25.000 pontos numa partida.',
+      en: 'Score 25,000 points in one game.',
+    },
     icon: '🌟',
     done: (s) => s.bestScore >= 25000,
     progress: (s) => clamp01(s.bestScore / 25000),
   },
   {
     id: 'score50k',
-    name: 'Gato Cósmico',
-    description: 'Faça 50.000 pontos numa partida.',
+    name: { pt: 'Gato Cósmico', en: 'Cosmic Cat' },
+    description: {
+      pt: 'Faça 50.000 pontos numa partida.',
+      en: 'Score 50,000 points in one game.',
+    },
     icon: '🚀',
     done: (s) => s.bestScore >= 50000,
     progress: (s) => clamp01(s.bestScore / 50000),
   },
   {
     id: 'levels50',
-    name: 'Colecionador de Fases',
-    description: 'Conclua 50 fases.',
+    name: { pt: 'Colecionador de Fases', en: 'Level Collector' },
+    description: { pt: 'Conclua 50 fases.', en: 'Complete 50 levels.' },
     icon: '🏠',
     done: (s) => s.levelsCompleted >= 50,
     progress: (s) => clamp01(s.levelsCompleted / 50),
   },
   {
     id: 'adventure10',
-    name: 'Aventureiro Felino',
-    description: 'Chegue ao Andar 10 na Aventura.',
+    name: { pt: 'Aventureiro Felino', en: 'Feline Adventurer' },
+    description: {
+      pt: 'Chegue ao Andar 10 na Aventura.',
+      en: 'Reach Floor 10 in Adventure.',
+    },
     icon: '🧭',
     done: (s) => s.advBestDepth >= 10,
     progress: (s) => clamp01(s.advBestDepth / 10),
   },
   {
     id: 'adventure20',
-    name: 'Lenda da Aventura',
-    description: 'Chegue ao Andar 20 na Aventura.',
+    name: { pt: 'Lenda da Aventura', en: 'Adventure Legend' },
+    description: {
+      pt: 'Chegue ao Andar 20 na Aventura.',
+      en: 'Reach Floor 20 in Adventure.',
+    },
     icon: '🏔️',
     done: (s) => s.advBestDepth >= 20,
     progress: (s) => clamp01(s.advBestDepth / 20),

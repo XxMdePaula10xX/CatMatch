@@ -1,9 +1,11 @@
 import { useGameStore } from '../../store/gameStore';
 import { getRelic } from '../../data/relics';
 import { Button } from '../ui/Button';
+import { useT, nf, tr } from '../../i18n';
 
 /** Shown between Adventure floors: pick one of three relics to power up. */
 export function RelicSelectScreen() {
+  const t = useT();
   const advDepth = useGameStore((s) => s.advDepth);
   const advTotalScore = useGameStore((s) => s.advTotalScore);
   const relicChoices = useGameStore((s) => s.relicChoices);
@@ -22,22 +24,22 @@ export function RelicSelectScreen() {
     <div className="screen">
       <div className="logo" style={{ marginTop: 0 }}>
         <div className="logo__sub" style={{ background: 'var(--purple)' }}>
-          🗺️ Andar {advDepth} concluído!
+          {t('relic.floorDone', { n: advDepth })}
         </div>
       </div>
 
       <div className="panel center">
-        <div className="stat__label">Pontuação total</div>
+        <div className="stat__label">{t('relic.totalScore')}</div>
         <div className="stat__value" style={{ color: 'var(--purple)' }}>
-          {advTotalScore.toLocaleString('pt-BR')}
+          {nf(advTotalScore)}
         </div>
       </div>
 
       <h2 className="section-title center" style={{ margin: 0 }}>
-        Escolha uma relíquia
+        {t('relic.choose')}
       </h2>
       <p className="muted center" style={{ margin: '2px 0 0', fontSize: 12 }}>
-        Relíquias repetidas se acumulam e ficam mais fortes! 🔁
+        {t('relic.stackHint')}
       </p>
 
       <div className="stack">
@@ -54,17 +56,17 @@ export function RelicSelectScreen() {
               <div className="relic-card__icon">{r.icon}</div>
               <div className="relic-card__text">
                 <strong>
-                  {r.name}
+                  {tr(r.name)}
                   {have > 0 && <span className="relic-card__have"> ×{have}</span>}
                 </strong>
-                <span className="muted">{r.description}</span>
+                <span className="muted">{tr(r.description)}</span>
                 {have > 0 && (
                   <span className="relic-card__stack">
-                    Você já tem — pegar deixa ×{have + 1}
+                    {t('relic.haveStack', { n: have + 1 })}
                   </span>
                 )}
               </div>
-              <span className="relic-card__pick">Pegar →</span>
+              <span className="relic-card__pick">{t('relic.pick')}</span>
             </button>
           );
         })}
@@ -72,19 +74,19 @@ export function RelicSelectScreen() {
 
       <div className="row" style={{ marginTop: 4, justifyContent: 'center' }}>
         <Button variant="ghost" small onClick={goHome}>
-          ← Encerrar aventura
+          {t('relic.endAdventure')}
         </Button>
       </div>
 
       {ownedUnique.length > 0 && (
         <div className="panel">
           <div className="stat__label" style={{ marginBottom: 6 }}>
-            Suas relíquias
+            {t('relic.yours')}
           </div>
           <div className="chips">
             {ownedUnique.map(({ relic, count }) => (
               <span className="chip" key={relic!.id}>
-                {relic!.icon} {relic!.name}
+                {relic!.icon} {tr(relic!.name)}
                 {count > 1 && <strong> ×{count}</strong>}
               </span>
             ))}

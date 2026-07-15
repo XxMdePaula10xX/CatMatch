@@ -1,5 +1,6 @@
 import type { CatType, Level, Objective, ObstacleType } from '../game/types';
 import { mulberry32 } from '../game/random';
+import { tr, type LStr } from '../i18n';
 
 /** All basic cats, in difficulty order (more types = harder to match). */
 export const ALL_CATS: CatType[] = [
@@ -114,6 +115,39 @@ const WORLD_NAMES = [
   'Montanha Miau',
   'Lua dos Gatos',
 ];
+
+/** Localized names for the 5 curated tutorial levels. */
+const CURATED_NAMES_L: LStr[] = [
+  { pt: 'Primeiros Miados', en: 'First Meows' },
+  { pt: 'Chuva de Laranjas', en: 'Orange Rain' },
+  { pt: 'Caixas Bagunceiras', en: 'Messy Boxes' },
+  { pt: 'Rolando o Novelo', en: 'Rolling the Yarn' },
+  { pt: 'O Gato Chefe Acorda', en: 'The Boss Cat Wakes' },
+];
+
+/** Localized world names, mirroring `WORLD_NAMES` (used for level.name in pt). */
+const WORLD_NAMES_L: LStr[] = [
+  { pt: 'Casa Aconchegante', en: 'Cozy Home' },
+  { pt: 'Quintal Bagunçado', en: 'Messy Backyard' },
+  { pt: 'Telhado dos Gatos', en: "Cats' Rooftop" },
+  { pt: 'Beco Travesso', en: 'Mischief Alley' },
+  { pt: 'Parque Felino', en: 'Feline Park' },
+  { pt: 'Castelo Real', en: 'Royal Castle' },
+  { pt: 'Cidade dos Gatos', en: 'Cat City' },
+  { pt: 'Floresta Ronronante', en: 'Purring Forest' },
+  { pt: 'Praia Felina', en: 'Feline Beach' },
+  { pt: 'Montanha Miau', en: 'Meow Mountain' },
+  { pt: 'Lua dos Gatos', en: 'Cat Moon' },
+];
+
+/** Localized display name for a campaign level (levels 1..TOTAL_LEVELS). */
+export function campaignLevelName(id: number): string {
+  if (id >= 1 && id <= CURATED_NAMES_L.length) return tr(CURATED_NAMES_L[id - 1]);
+  const world = Math.ceil(id / 10);
+  return tr(
+    WORLD_NAMES_L[world - 1] ?? { pt: 'Aventura Felina', en: 'Feline Adventure' },
+  );
+}
 
 type Archetype =
   | 'score'

@@ -12,6 +12,7 @@ import {
   type QueryParams,
 } from '../../services/leaderboard';
 import { Button } from '../ui/Button';
+import { useT, nf, t } from '../../i18n';
 
 type Filter = 'daily' | 'blitz' | 'adventure' | 'all' | number;
 
@@ -28,10 +29,11 @@ function boardLabel(board: string): string {
   if (board === 'daily') return '📅';
   if (board === 'blitz') return '⚡';
   if (board === 'adventure') return '🗺️';
-  return board.replace('lvl', 'F');
+  return board.replace('lvl', t('lb.levelShort'));
 }
 
 export function LeaderboardScreen() {
+  const tt = useT();
   const goHome = useGameStore((s) => s.goHome);
   const nickname = useGameStore((s) => s.nickname);
   const setNickname = useGameStore((s) => s.setNickname);
@@ -84,11 +86,17 @@ export function LeaderboardScreen() {
   return (
     <div className="screen">
       <div className="row spread">
-        <Button variant="ghost" small icon aria-label="Voltar" onClick={goHome}>
+        <Button
+          variant="ghost"
+          small
+          icon
+          aria-label={tt('common.back')}
+          onClick={goHome}
+        >
           ←
         </Button>
         <h2 className="section-title" style={{ margin: 0 }}>
-          🏆 Ranking
+          {tt('lb.title')}
         </h2>
         <div style={{ width: 50 }} />
       </div>
@@ -99,16 +107,16 @@ export function LeaderboardScreen() {
           <>
             <div className="account">
               <div className="account__info">
-                <strong>Modo local</strong>
+                <strong>{tt('lb.localMode')}</strong>
                 <span className="muted" style={{ fontSize: 12 }}>
-                  Configure o Firebase para login e ranking global.
+                  {tt('lb.localModeDesc')}
                 </span>
               </div>
             </div>
             <NickRow {...{ name, setName, nickname, setNickname }} />
           </>
         ) : !authReady ? (
-          <p className="center muted">Carregando conta…</p>
+          <p className="center muted">{tt('lb.loadingAccount')}</p>
         ) : user ? (
           <>
             <div className="account">
@@ -118,11 +126,11 @@ export function LeaderboardScreen() {
                   <span className="ranking__tag">#{playerTag(user.uid)}</span>
                 </strong>
                 <span className="muted" style={{ fontSize: 12 }}>
-                  🌍 Conectado · ranking global
+                  {tt('lb.connected')}
                 </span>
               </div>
               <Button variant="ghost" small onClick={goProfile}>
-                👤 Perfil
+                {tt('lb.profile')}
               </Button>
             </div>
             <NickRow {...{ name, setName, nickname, setNickname }} />
@@ -130,11 +138,10 @@ export function LeaderboardScreen() {
         ) : (
           <div className="stack">
             <p className="center muted" style={{ margin: 0 }}>
-              Entre ou crie uma conta para salvar sua pontuação no ranking
-              global.
+              {tt('lb.signInPrompt')}
             </p>
             <Button variant="green" block onClick={goAuth}>
-              🔑 Entrar / Criar conta
+              {tt('lb.signInBtn')}
             </Button>
           </div>
         )}
@@ -145,13 +152,13 @@ export function LeaderboardScreen() {
           className={`period-toggle__btn ${!allTime ? 'on' : ''}`}
           onClick={() => setAllTime(false)}
         >
-          🗓️ Esta semana
+          {tt('lb.thisWeek')}
         </button>
         <button
           className={`period-toggle__btn ${allTime ? 'on' : ''}`}
           onClick={() => setAllTime(true)}
         >
-          👑 Todos os tempos
+          {tt('lb.allTime')}
         </button>
       </div>
 
@@ -160,25 +167,25 @@ export function LeaderboardScreen() {
           className={`filter ${filter === 'daily' ? 'on' : ''}`}
           onClick={() => setFilter('daily')}
         >
-          {allTime ? '📅 Melhor dia' : '📅 Diário'}
+          {allTime ? tt('lb.filterBestDay') : tt('lb.filterDaily')}
         </button>
         <button
           className={`filter ${filter === 'blitz' ? 'on' : ''}`}
           onClick={() => setFilter('blitz')}
         >
-          ⚡ Relâmpago
+          {tt('lb.filterBlitz')}
         </button>
         <button
           className={`filter ${filter === 'adventure' ? 'on' : ''}`}
           onClick={() => setFilter('adventure')}
         >
-          🗺️ Aventura
+          {tt('lb.filterAdventure')}
         </button>
         <button
           className={`filter ${filter === 'all' ? 'on' : ''}`}
           onClick={() => setFilter('all')}
         >
-          Geral
+          {tt('lb.filterAll')}
         </button>
         <select
           className={`filter filter--select ${
@@ -189,10 +196,10 @@ export function LeaderboardScreen() {
             setFilter(e.target.value ? Number(e.target.value) : 'all')
           }
         >
-          <option value="">Por fase…</option>
+          <option value="">{tt('lb.byLevel')}</option>
           {levels.map((l) => (
             <option key={l.id} value={l.id}>
-              Fase {l.id}
+              {tt('lb.levelN', { n: l.id })}
             </option>
           ))}
         </select>
@@ -200,17 +207,17 @@ export function LeaderboardScreen() {
 
       <p className="center muted" style={{ margin: 0, fontSize: 12 }}>
         {allTime
-          ? '👑 Recordes de todos os tempos · nunca zera'
+          ? tt('lb.captionAllTime')
           : isDaily
-            ? '📅 Ranking de hoje'
-            : `🗓️ ${weekLabel()} · zera toda semana`}
+            ? tt('lb.captionDaily')
+            : tt('lb.captionWeekly', { week: weekLabel() })}
       </p>
 
       <div className="panel">
         {entries === null ? (
-          <p className="center muted">Carregando…</p>
+          <p className="center muted">{tt('common.loading')}</p>
         ) : entries.length === 0 ? (
-          <p className="center muted">Ainda sem pontuações. Seja o primeiro! 🐾</p>
+          <p className="center muted">{tt('lb.empty')}</p>
         ) : (
           <ol className="ranking">
             {entries.map((e, i) => (
@@ -238,9 +245,7 @@ export function LeaderboardScreen() {
                   )}
                 </span>
                 <span className="ranking__lvl">{boardLabel(e.board)}</span>
-                <span className="ranking__score">
-                  {e.score.toLocaleString('pt-BR')}
-                </span>
+                <span className="ranking__score">{nf(e.score)}</span>
               </li>
             ))}
           </ol>
@@ -250,10 +255,10 @@ export function LeaderboardScreen() {
         {myScore > 0 && !inTop && myRank !== null && (
           <div className="ranking__me-pin">
             <span className="ranking__pos">#{myRank}</span>
-            <span className="ranking__name">{nickname || 'Você'} (você)</span>
-            <span className="ranking__score">
-              {myScore.toLocaleString('pt-BR')}
+            <span className="ranking__name">
+              {nickname || tt('lb.you')} {tt('lb.youParen')}
             </span>
+            <span className="ranking__score">{nf(myScore)}</span>
           </div>
         )}
       </div>
@@ -272,16 +277,17 @@ function NickRow({
   nickname: string;
   setNickname: (v: string) => void;
 }) {
+  const tt = useT();
   return (
     <>
       <label className="stat__label" htmlFor="nick">
-        Apelido no ranking
+        {tt('auth.nickname')}
       </label>
       <div className="row" style={{ marginTop: 6 }}>
         <input
           id="nick"
           className="nick-input"
-          placeholder="Seu nome"
+          placeholder={tt('lb.nickPlaceholder')}
           value={name}
           maxLength={18}
           onChange={(e) => setName(e.target.value)}
@@ -292,7 +298,7 @@ function NickRow({
           onClick={() => setNickname(name.trim())}
           disabled={!name.trim() || name.trim() === nickname}
         >
-          Salvar
+          {tt('common.save')}
         </Button>
       </div>
     </>

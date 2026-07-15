@@ -1,73 +1,86 @@
 import type { CatType, SpecialCatType } from '../game/types';
+import type { LStr } from '../i18n';
 
 export interface CatDef {
   id: CatType;
-  name: string;
-  personality: string;
+  name: LStr;
+  personality: LStr;
   /** Main color used for the tile gradient. */
   color: string;
   colorDark: string;
   emoji: string;
   /** Short description of the personality power. */
-  power: string;
+  power: LStr;
 }
 
 /** The six basic cats. Order is also used for level palettes. */
 export const CATS: Record<CatType, CatDef> = {
   orange: {
     id: 'orange',
-    name: 'Gato Laranja',
-    personality: 'Alegre',
+    name: { pt: 'Gato Laranja', en: 'Orange Cat' },
+    personality: { pt: 'Alegre', en: 'Cheerful' },
     color: '#FFB36B',
     colorDark: '#F2933D',
     emoji: '🐱',
-    power: 'Pontuação extra (+20% na combinação)',
+    power: {
+      pt: 'Pontuação extra (+20% na combinação)',
+      en: 'Extra points (+20% on the match)',
+    },
   },
   gray: {
     id: 'gray',
-    name: 'Gato Cinza',
-    personality: 'Esperto',
+    name: { pt: 'Gato Cinza', en: 'Gray Cat' },
+    personality: { pt: 'Esperto', en: 'Clever' },
     color: '#B9C4D0',
     colorDark: '#8C9AAE',
     emoji: '😺',
-    power: 'Revela uma dica de jogada',
+    power: { pt: 'Revela uma dica de jogada', en: 'Reveals a move hint' },
   },
   white: {
     id: 'white',
-    name: 'Gato Branco',
-    personality: 'Mágico',
+    name: { pt: 'Gato Branco', en: 'White Cat' },
+    personality: { pt: 'Mágico', en: 'Magical' },
     color: '#FFF4E8',
     colorDark: '#E7D8C6',
     emoji: '😸',
-    power: 'Transforma uma peça adjacente',
+    power: {
+      pt: 'Transforma uma peça adjacente',
+      en: 'Transforms an adjacent tile',
+    },
   },
   black: {
     id: 'black',
-    name: 'Gato Preto',
-    personality: 'Sortudo',
+    name: { pt: 'Gato Preto', en: 'Black Cat' },
+    personality: { pt: 'Sortudo', en: 'Lucky' },
     color: '#5B5566',
     colorDark: '#3C3744',
     emoji: '🐈‍⬛',
-    power: 'Reduz a resistência de um obstáculo',
+    power: {
+      pt: 'Reduz a resistência de um obstáculo',
+      en: "Reduces an obstacle's resistance",
+    },
   },
   siamese: {
     id: 'siamese',
-    name: 'Gato Siamês',
-    personality: 'Charmoso',
+    name: { pt: 'Gato Siamês', en: 'Siamese Cat' },
+    personality: { pt: 'Charmoso', en: 'Charming' },
     color: '#E9D6B8',
     colorDark: '#B89A6E',
     emoji: '😻',
-    power: 'Carrega o Gato Chefe mais rápido',
+    power: {
+      pt: 'Carrega o Gato Chefe mais rápido',
+      en: 'Charges the Boss Cat faster',
+    },
   },
   tabby: {
     id: 'tabby',
-    name: 'Gato Rajado',
-    personality: 'Bagunceiro',
+    name: { pt: 'Gato Rajado', en: 'Tabby Cat' },
+    personality: { pt: 'Bagunceiro', en: 'Messy' },
     // Vivid rose halo so it stands out from the pale white/gray/cream cats.
     color: '#FF88B8',
     colorDark: '#E0568F',
     emoji: '😽',
-    power: 'Empurra uma peça próxima',
+    power: { pt: 'Empurra uma peça próxima', en: 'Pushes a nearby tile' },
   },
 };
 
@@ -75,58 +88,82 @@ export const CAT_TYPES: CatType[] = Object.keys(CATS) as CatType[];
 
 export interface SpecialCatDef {
   id: SpecialCatType;
-  name: string;
+  name: LStr;
   emoji: string;
-  description: string;
+  description: LStr;
 }
 
 export const SPECIAL_CATS: Record<SpecialCatType, SpecialCatDef> = {
   ninjaH: {
     id: 'ninjaH',
-    name: 'Gato Ninja',
+    name: { pt: 'Gato Ninja', en: 'Ninja Cat' },
     emoji: '🥷',
-    description: 'Limpa uma linha inteira',
+    description: { pt: 'Limpa uma linha inteira', en: 'Clears a whole row' },
   },
   ninjaV: {
     id: 'ninjaV',
-    name: 'Gato Ninja',
+    name: { pt: 'Gato Ninja', en: 'Ninja Cat' },
     emoji: '🥷',
-    description: 'Limpa uma coluna inteira',
+    description: {
+      pt: 'Limpa uma coluna inteira',
+      en: 'Clears a whole column',
+    },
   },
   sleepy: {
     id: 'sleepy',
-    name: 'Gato Soneca',
+    name: { pt: 'Gato Soneca', en: 'Sleepy Cat' },
     emoji: '😴',
-    description: 'Dorme 1 turno e limpa uma área 3x3',
+    description: {
+      pt: 'Dorme 1 turno e limpa uma área 3x3',
+      en: 'Sleeps 1 turn and clears a 3x3 area',
+    },
   },
   magician: {
     id: 'magician',
-    name: 'Gato Mágico',
+    name: { pt: 'Gato Mágico', en: 'Magician Cat' },
     emoji: '🧙',
-    description: 'Transforma várias peças em um tipo',
+    description: {
+      pt: 'Transforma várias peças em um tipo',
+      en: 'Turns several tiles into one type',
+    },
   },
   angry: {
     id: 'angry',
-    name: 'Gato Bravo',
+    name: { pt: 'Gato Bravo', en: 'Angry Cat' },
     emoji: '😾',
-    description: 'Explode uma área 3x3',
+    description: { pt: 'Explode uma área 3x3', en: 'Blasts a 3x3 area' },
   },
   lucky: {
     id: 'lucky',
-    name: 'Gato da Sorte',
+    name: { pt: 'Gato da Sorte', en: 'Lucky Cat' },
     emoji: '🍀',
-    description: 'Remove obstáculos ou coleta itens',
+    description: {
+      pt: 'Remove obstáculos ou coleta itens',
+      en: 'Removes obstacles or collects items',
+    },
   },
 };
 
 /** How each special cat is created (shown in the in-game guide). */
-export const SPECIAL_CREATE: Record<SpecialCatType, string> = {
-  ninjaH: 'Combine 4 gatos iguais em linha',
-  ninjaV: 'Combine 4 gatos iguais em coluna',
-  sleepy: 'Aparece em fases avançadas',
-  magician: 'Combine 5 gatos iguais',
-  angry: 'Combine gatos em formato L ou T',
-  lucky: 'Recompensa de combo / fases especiais',
+export const SPECIAL_CREATE: Record<SpecialCatType, LStr> = {
+  ninjaH: {
+    pt: 'Combine 4 gatos iguais em linha',
+    en: 'Match 4 identical cats in a row',
+  },
+  ninjaV: {
+    pt: 'Combine 4 gatos iguais em coluna',
+    en: 'Match 4 identical cats in a column',
+  },
+  sleepy: { pt: 'Aparece em fases avançadas', en: 'Appears in later levels' },
+  magician: { pt: 'Combine 5 gatos iguais', en: 'Match 5 identical cats' },
+  angry: {
+    pt: 'Combine gatos em formato L ou T',
+    en: 'Match cats in an L or T shape',
+  },
+  lucky: {
+    pt: 'Recompensa de combo / fases especiais',
+    en: 'Combo reward / special levels',
+  },
 };
 
 /**

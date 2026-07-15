@@ -5,9 +5,11 @@ import { formatTime } from './TimerCounter';
 import { Modal, Stars } from './Modal';
 import { Confetti } from './Confetti';
 import { Button } from './Button';
+import { useT, nf } from '../../i18n';
 
 /** Shown when the player clears the level objective. */
 export function VictoryModal() {
+  const t = useT();
   const score = useGameStore((s) => s.score);
   const movesLeft = useGameStore((s) => s.movesLeft);
   const totalMoves = useGameStore((s) => s.totalMoves);
@@ -33,46 +35,46 @@ export function VictoryModal() {
       <span className="modal__cat" aria-hidden>
         😸
       </span>
-      <h2 className="modal__title">Fase Concluída!</h2>
+      <h2 className="modal__title">{t('victory.title')}</h2>
       <Stars count={stars} />
 
       <div className="score-breakdown">
         <div className="score-breakdown__row">
-          <span>Pontos</span>
-          <span>{score.toLocaleString('pt-BR')}</span>
+          <span>{t('victory.points')}</span>
+          <span>{nf(score)}</span>
         </div>
         <div className="score-breakdown__row">
-          <span>⏱️ Tempo ({formatTime(elapsedMs)})</span>
+          <span>{t('victory.timeRow', { time: formatTime(elapsedMs) })}</span>
           <span>×{timeMult}</span>
         </div>
         <div className="score-breakdown__row total">
-          <span>High Score</span>
-          <span>{highScore.toLocaleString('pt-BR')}</span>
+          <span>{t('victory.highScore')}</span>
+          <span>{nf(highScore)}</span>
         </div>
       </div>
-      {isRecord && <div className="record-badge">🎉 Novo recorde!</div>}
+      {isRecord && <div className="record-badge">{t('victory.newRecord')}</div>}
       {promptLogin && (
         <p className="muted" style={{ fontSize: 13, margin: '4px 0 10px' }}>
-          Entre no ranking para salvar sua pontuação online 🌍
+          {t('victory.loginPrompt')}
         </p>
       )}
 
       <div className="stack">
         {hasNext ? (
           <Button variant="green" block onClick={nextLevel}>
-            Continuar ▶
+            {t('victory.continue')}
           </Button>
         ) : (
           <Button variant="green" block onClick={goLevelSelect}>
-            Mapa de Fases
+            {t('victory.levelMap')}
           </Button>
         )}
         <div className="row">
           <Button variant="ghost" small block onClick={restartLevel}>
-            🔁 Repetir
+            {t('victory.repeat')}
           </Button>
           <Button variant="purple" small block onClick={goLeaderboard}>
-            {promptLogin ? '🏆 Entrar' : '🏆 Ranking'}
+            {promptLogin ? t('victory.rankingLogin') : t('victory.ranking')}
           </Button>
         </div>
       </div>

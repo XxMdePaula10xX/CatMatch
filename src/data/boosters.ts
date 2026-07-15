@@ -1,10 +1,12 @@
+import type { LStr } from '../i18n';
+
 export type BoosterId = 'pawBomb' | 'rainbowYarn' | 'laser' | 'giantPaw';
 
 export interface BoosterDef {
   id: BoosterId;
-  name: string;
+  name: LStr;
   emoji: string;
-  description: string;
+  description: LStr;
   /** Implemented in the MVP (vs. visual-only). */
   implemented: boolean;
 }
@@ -12,30 +14,39 @@ export interface BoosterDef {
 export const BOOSTERS: Record<BoosterId, BoosterDef> = {
   pawBomb: {
     id: 'pawBomb',
-    name: 'Bomba de Patinha',
+    name: { pt: 'Bomba de Patinha', en: 'Paw Bomb' },
     emoji: '🐾',
-    description: 'Remove uma área 3x3.',
+    description: { pt: 'Remove uma área 3x3.', en: 'Removes a 3x3 area.' },
     implemented: true,
   },
   rainbowYarn: {
     id: 'rainbowYarn',
-    name: 'Novelo Arco-Íris',
+    name: { pt: 'Novelo Arco-Íris', en: 'Rainbow Yarn' },
     emoji: '🌈',
-    description: 'Remove todas as peças de um tipo.',
+    description: {
+      pt: 'Remove todas as peças de um tipo.',
+      en: 'Removes every tile of one type.',
+    },
     implemented: false,
   },
   laser: {
     id: 'laser',
-    name: 'Bigodes a Laser',
+    name: { pt: 'Bigodes a Laser', en: 'Laser Whiskers' },
     emoji: '✨',
-    description: 'Remove uma linha inteira.',
+    description: {
+      pt: 'Remove uma linha inteira.',
+      en: 'Removes a whole row.',
+    },
     implemented: true,
   },
   giantPaw: {
     id: 'giantPaw',
-    name: 'Pata Gigante',
+    name: { pt: 'Pata Gigante', en: 'Giant Paw' },
     emoji: '🖐️',
-    description: 'Remove uma coluna inteira.',
+    description: {
+      pt: 'Remove uma coluna inteira.',
+      en: 'Removes a whole column.',
+    },
     implemented: false,
   },
 };

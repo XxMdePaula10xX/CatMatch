@@ -16,6 +16,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { firebaseEnabled, getFirebaseApp } from './firebase';
+import { t } from '../i18n';
 
 export interface AppUser {
   uid: string;
@@ -129,7 +130,7 @@ export async function deleteCurrentUser(): Promise<void> {
   if (a && user) await withTimeout(deleteUser(user));
 }
 
-/** Turns a Firebase auth error into a friendly Portuguese message. */
+/** Turns a Firebase auth error into a friendly, localized message. */
 export function authErrorMessage(e: unknown): string {
   const code =
     typeof e === 'object' && e && 'code' in e
@@ -137,23 +138,23 @@ export function authErrorMessage(e: unknown): string {
       : '';
   switch (code) {
     case 'auth/invalid-email':
-      return 'E-mail inválido.';
+      return t('authErr.invalidEmail');
     case 'auth/email-already-in-use':
-      return 'Este e-mail já está em uso.';
+      return t('authErr.emailInUse');
     case 'auth/weak-password':
-      return 'A senha precisa de pelo menos 6 caracteres.';
+      return t('authErr.weakPassword');
     case 'auth/missing-password':
-      return 'Digite uma senha.';
+      return t('authErr.missingPassword');
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
-      return 'E-mail ou senha incorretos.';
+      return t('authErr.wrongPassword');
     case 'auth/user-not-found':
-      return 'Conta não encontrada.';
+      return t('authErr.userNotFound');
     case 'auth/too-many-requests':
-      return 'Muitas tentativas. Tente novamente mais tarde.';
+      return t('authErr.tooManyRequests');
     case 'auth/network-request-failed':
-      return 'Sem conexão. Verifique sua internet.';
+      return t('authErr.network');
     default:
-      return 'Não foi possível concluir. Tente novamente.';
+      return t('authErr.generic');
   }
 }

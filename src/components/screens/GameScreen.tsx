@@ -13,9 +13,11 @@ import { ResultsModal } from '../ui/ResultsModal';
 import { HelpModal } from '../ui/HelpModal';
 import { Button } from '../ui/Button';
 import { getRelic } from '../../data/relics';
+import { useT } from '../../i18n';
 
 /** The main gameplay screen (shared by normal, daily and blitz modes). */
 export function GameScreen() {
+  const t = useT();
   const level = useGameStore((s) => s.level);
   const mode = useGameStore((s) => s.mode);
   const objectives = useGameStore((s) => s.objectives);
@@ -35,12 +37,12 @@ export function GameScreen() {
   const isAdventure = mode === 'adventure';
   const modeName =
     mode === 'daily'
-      ? '📅 Diário'
+      ? t('game.modeDaily')
       : isBlitz
-        ? '⚡ Relâmpago'
+        ? t('game.modeBlitz')
         : isAdventure
-          ? `🗺️ Andar ${advDepth}`
-          : `Fase ${level.id}`;
+          ? t('game.modeFloor', { n: advDepth })
+          : t('game.modeLevel', { n: level.id });
 
   return (
     <div className="screen">
@@ -67,11 +69,11 @@ export function GameScreen() {
 
       {activeBooster ? (
         <p className="center muted" style={{ margin: 0 }}>
-          Toque no tabuleiro para usar o booster 🎯
+          {t('game.useBooster')}
         </p>
       ) : (
         <p className="center muted" style={{ margin: 0, fontSize: 13 }}>
-          Arraste ou toque para trocar dois gatinhos
+          {t('game.swapHint')}
         </p>
       )}
 
@@ -81,13 +83,13 @@ export function GameScreen() {
 
       <div className="controls">
         <Button variant="ghost" small onClick={goHome}>
-          ← Início
+          {t('game.home')}
         </Button>
         <Button
           variant="ghost"
           small
           icon
-          aria-label="Ajuda"
+          aria-label={t('common.help')}
           onClick={() => setShowHelp(true)}
         >
           ❓

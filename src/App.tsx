@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
+import { useLang } from './i18n';
 import { setupDailyReminder, clearBadge } from './services/notifications';
 import { flushPendingScores } from './services/leaderboard';
 import { HomeScreen } from './components/screens/HomeScreen';
@@ -15,6 +16,8 @@ import { TutorialOverlay } from './components/ui/TutorialOverlay';
 export default function App() {
   const screen = useGameStore((s) => s.screen);
   const showTutorial = useGameStore((s) => s.showTutorial);
+  // Subscribe to the language so a switch re-renders the whole screen tree.
+  useLang();
 
   useEffect(() => {
     // Retry any scores that failed to upload on a previous session, regardless

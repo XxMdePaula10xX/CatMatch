@@ -1,63 +1,29 @@
 import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Button } from './Button';
+import { useT } from '../../i18n';
 
 interface Slide {
   icon: string;
-  title: string;
-  text: string;
+  titleKey: string;
+  textKey: string;
 }
 
 const SLIDES: Slide[] = [
-  {
-    icon: '🐱',
-    title: 'Bem-vindo ao Cat Match!',
-    text: 'Combine 3 ou mais gatinhos iguais para fazê-los sumir e ganhar pontos.',
-  },
-  {
-    icon: '👆',
-    title: 'Como jogar',
-    text: 'Arraste um gato na direção desejada — ou toque em dois vizinhos para trocá-los. A troca só vale se formar uma combinação.',
-  },
-  {
-    icon: '✨',
-    title: 'Combinações especiais',
-    text: '3 iguais somem. 4 em linha criam um Ninja (limpa linha/coluna). 5 criam um Mago. Em formato L ou T criam o Bravo (explode 3x3).',
-  },
-  {
-    icon: '😺',
-    title: 'Cada gato tem um poder',
-    text: 'Laranja: +pontos · Cinza: dá dica · Branco: transforma vizinho · Preto: quebra obstáculo · Siamês: carrega o Chefe · Rajado: empurra peças.',
-  },
-  {
-    icon: '🧶',
-    title: 'Novelo de Lã',
-    text: 'Combine ao lado de um novelo e ele rola pelo tabuleiro, limpando um caminho inteiro!',
-  },
-  {
-    icon: '👑',
-    title: 'Gato Chefe',
-    text: 'Seus combos enchem a barra do Chefe. Quando enche, ele acorda e remove todos os gatos do tipo mais comum do tabuleiro.',
-  },
-  {
-    icon: '📦',
-    title: 'Obstáculos',
-    text: 'Caixas precisam de 2 danos para quebrar. Faça combinações ao lado delas. Arranhadores bloqueiam a queda das peças.',
-  },
-  {
-    icon: '⏱️',
-    title: 'Objetivo & tempo',
-    text: 'Cumpra o objetivo antes de acabar os movimentos. Quanto mais rápido terminar, maior o seu High Score!',
-  },
-  {
-    icon: '🗺️',
-    title: 'Modos de jogo',
-    text: 'Fases (campanha), Desafio Diário, Relâmpago (60s) e Aventura — uma jornada roguelite onde você escolhe relíquias entre os andares. Divirta-se! 🐾',
-  },
+  { icon: '🐱', titleKey: 'tut.1.title', textKey: 'tut.1.text' },
+  { icon: '👆', titleKey: 'tut.2.title', textKey: 'tut.2.text' },
+  { icon: '✨', titleKey: 'tut.3.title', textKey: 'tut.3.text' },
+  { icon: '😺', titleKey: 'tut.4.title', textKey: 'tut.4.text' },
+  { icon: '🧶', titleKey: 'tut.5.title', textKey: 'tut.5.text' },
+  { icon: '👑', titleKey: 'tut.6.title', textKey: 'tut.6.text' },
+  { icon: '📦', titleKey: 'tut.7.title', textKey: 'tut.7.text' },
+  { icon: '⏱️', titleKey: 'tut.8.title', textKey: 'tut.8.text' },
+  { icon: '🗺️', titleKey: 'tut.9.title', textKey: 'tut.9.text' },
 ];
 
 /** First-run (and re-openable) step-by-step tutorial. */
 export function TutorialOverlay() {
+  const t = useT();
   const closeTutorial = useGameStore((s) => s.closeTutorial);
   const [i, setI] = useState(0);
 
@@ -70,8 +36,8 @@ export function TutorialOverlay() {
         <div className="tutorial__icon" aria-hidden>
           {slide.icon}
         </div>
-        <h2 className="modal__title">{slide.title}</h2>
-        <p className="tutorial__text">{slide.text}</p>
+        <h2 className="modal__title">{t(slide.titleKey)}</h2>
+        <p className="tutorial__text">{t(slide.textKey)}</p>
 
         <div className="tutorial__dots">
           {SLIDES.map((_, idx) => (
@@ -86,20 +52,20 @@ export function TutorialOverlay() {
         <div className="row" style={{ marginTop: 6 }}>
           {i > 0 ? (
             <Button variant="ghost" small block onClick={() => setI(i - 1)}>
-              ← Voltar
+              {t('tut.prev')}
             </Button>
           ) : (
             <Button variant="ghost" small block onClick={closeTutorial}>
-              Pular
+              {t('tut.skip')}
             </Button>
           )}
           {isLast ? (
             <Button variant="green" small block onClick={closeTutorial}>
-              Começar! 🐾
+              {t('tut.start')}
             </Button>
           ) : (
             <Button variant="green" small block onClick={() => setI(i + 1)}>
-              Próximo →
+              {t('tut.next')}
             </Button>
           )}
         </div>

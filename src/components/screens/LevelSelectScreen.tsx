@@ -1,21 +1,22 @@
 import { useGameStore } from '../../store/gameStore';
-import { levels } from '../../data/levels';
+import { levels, campaignLevelName } from '../../data/levels';
 import { Button } from '../ui/Button';
 import type { Objective } from '../../game/types';
+import { useT, t } from '../../i18n';
 
 function goalLabel(objectives: Objective[]): string {
   const o = objectives[0];
   switch (o.type) {
     case 'score':
-      return `${o.target} pts`;
+      return t('goal.score', { n: o.target });
     case 'collectCat':
-      return `Colete ${o.target}`;
+      return t('goal.collect', { n: o.target });
     case 'breakBox':
-      return `${o.target} caixas`;
+      return t('goal.boxes', { n: o.target });
     case 'activateYarn':
-      return `${o.target} novelos`;
+      return t('goal.yarns', { n: o.target });
     case 'chargeBoss':
-      return `Chefe ${o.target}x`;
+      return t('goal.boss', { n: o.target });
     default:
       return '';
   }
@@ -23,6 +24,7 @@ function goalLabel(objectives: Objective[]): string {
 
 /** Level map: cards with stars and locked indicators. */
 export function LevelSelectScreen() {
+  const tt = useT();
   const goHome = useGameStore((s) => s.goHome);
   const startLevel = useGameStore((s) => s.startLevel);
   const unlocked = useGameStore((s) => s.unlockedLevel);
@@ -31,11 +33,17 @@ export function LevelSelectScreen() {
   return (
     <div className="screen">
       <div className="row spread">
-        <Button variant="ghost" small icon aria-label="Voltar" onClick={goHome}>
+        <Button
+          variant="ghost"
+          small
+          icon
+          aria-label={tt('common.back')}
+          onClick={goHome}
+        >
           ←
         </Button>
         <h2 className="section-title" style={{ margin: 0 }}>
-          Escolha uma Fase
+          {tt('levelSelect.title')}
         </h2>
         <div style={{ width: 50 }} />
       </div>
@@ -58,8 +66,12 @@ export function LevelSelectScreen() {
                   level.id
                 )}
               </div>
-              <div className="level-card__name">{level.name}</div>
-              <div className="level-card__goal">{goalLabel(level.objectives)}</div>
+              <div className="level-card__name">
+                {campaignLevelName(level.id)}
+              </div>
+              <div className="level-card__goal">
+                {goalLabel(level.objectives)}
+              </div>
               <div className="level-card__stars">
                 {[0, 1, 2].map((i) => (
                   <span key={i} style={{ opacity: i < earned ? 1 : 0.3 }}>

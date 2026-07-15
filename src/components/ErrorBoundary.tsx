@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { t } from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -37,13 +38,13 @@ export class ErrorBoundary extends Component<Props, State> {
             🙀
           </div>
           <h2 className="section-title" style={{ margin: 0 }}>
-            Algo deu errado
+            {t('error.title')}
           </h2>
           <p className="muted" style={{ margin: 0 }}>
-            Tivemos um probleminha. Seu progresso está salvo — é só recarregar.
+            {t('error.body')}
           </p>
           <button className="btn" onClick={this.reload}>
-            Recarregar
+            {t('error.reload')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 /** Builds a shareable text card for a Daily Challenge result (Wordle-style). */
+import { t, nf } from '../i18n';
 
 /** 5-segment performance bar based on score thresholds. */
 function ratingBar(score: number): { tier: number; bar: string } {
@@ -18,10 +19,10 @@ export function buildDailyShare(dayId: string, score: number): DailyShare {
   const { tier, bar } = ratingBar(score);
   const paws = '🐾'.repeat(Math.max(1, tier));
   const text =
-    `🐱 Cat Match — Desafio ${dayId}\n` +
+    `${t('share.line1', { day: dayId })}\n` +
     `${bar}\n` +
-    `${score.toLocaleString('pt-BR')} pontos ${paws}\n` +
-    `Jogue você também! 🧶`;
+    `${t('share.points', { score: nf(score), paws })}\n` +
+    `${t('share.cta')}`;
   return { text, tier };
 }
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Button } from '../ui/Button';
+import { useT } from '../../i18n';
 
 /** Email/password login + sign-up screen (works on web and in the native app). */
 export function AuthScreen() {
+  const t = useT();
   const goLeaderboard = useGameStore((s) => s.goLeaderboard);
   const goHome = useGameStore((s) => s.goHome);
   const signInEmail = useGameStore((s) => s.signInEmail);
@@ -21,27 +23,21 @@ export function AuthScreen() {
   async function forgotPassword() {
     setError(null);
     setInfo(null);
-    if (!email.trim())
-      return setError('Digite seu e-mail acima para redefinir a senha.');
+    if (!email.trim()) return setError(t('auth.errResetEmail'));
     setBusy(true);
     const err = await resetPassword(email);
     setBusy(false);
     if (err) setError(err);
-    else
-      setInfo(
-        `Enviamos um link para ${email.trim()}. Não esqueça de checar a caixa de spam/lixo eletrônico.`,
-      );
+    else setInfo(t('auth.resetSent', { email: email.trim() }));
   }
 
   const isSignup = mode === 'signup';
 
   async function submit() {
     setError(null);
-    if (!email.trim()) return setError('Digite seu e-mail.');
-    if (password.length < 6)
-      return setError('A senha precisa de pelo menos 6 caracteres.');
-    if (isSignup && !nickname.trim())
-      return setError('Escolha um apelido para o ranking.');
+    if (!email.trim()) return setError(t('auth.errEmail'));
+    if (password.length < 6) return setError(t('auth.errPassword'));
+    if (isSignup && !nickname.trim()) return setError(t('auth.errNickname'));
 
     setBusy(true);
     const err = isSignup
@@ -56,11 +52,17 @@ export function AuthScreen() {
   return (
     <div className="screen">
       <div className="row spread">
-        <Button variant="ghost" small icon aria-label="Voltar" onClick={goHome}>
+        <Button
+          variant="ghost"
+          small
+          icon
+          aria-label={t('common.back')}
+          onClick={goHome}
+        >
           ←
         </Button>
         <h2 className="section-title" style={{ margin: 0 }}>
-          {isSignup ? 'Criar conta' : 'Entrar'}
+          {isSignup ? t('auth.signUp') : t('auth.signIn')}
         </h2>
         <div style={{ width: 50 }} />
       </div>
@@ -79,7 +81,7 @@ export function AuthScreen() {
             setError(null);
           }}
         >
-          Entrar
+          {t('auth.signIn')}
         </button>
         <button
           className={`auth-tab ${isSignup ? 'on' : ''}`}
@@ -88,13 +90,13 @@ export function AuthScreen() {
             setError(null);
           }}
         >
-          Criar conta
+          {t('auth.signUp')}
         </button>
       </div>
 
       <div className="panel stack">
         <label className="stat__label" htmlFor="email">
-          E-mail
+          {t('auth.email')}
         </label>
         <input
           id="email"
@@ -102,20 +104,20 @@ export function AuthScreen() {
           type="email"
           autoComplete="email"
           inputMode="email"
-          placeholder="voce@email.com"
+          placeholder={t('auth.emailPlaceholder')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
         <label className="stat__label" htmlFor="password">
-          Senha
+          {t('auth.password')}
         </label>
         <input
           id="password"
           className="nick-input"
           type="password"
           autoComplete={isSignup ? 'new-password' : 'current-password'}
-          placeholder="mínimo 6 caracteres"
+          placeholder={t('auth.passwordPlaceholder')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -123,13 +125,13 @@ export function AuthScreen() {
         {isSignup && (
           <>
             <label className="stat__label" htmlFor="nick">
-              Apelido no ranking
+              {t('auth.nickname')}
             </label>
             <input
               id="nick"
               className="nick-input"
               maxLength={18}
-              placeholder="Seu nome no ranking"
+              placeholder={t('auth.nicknamePlaceholder')}
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
             />
@@ -140,7 +142,7 @@ export function AuthScreen() {
         {info && <p className="auth-ok">✅ {info}</p>}
 
         <Button variant="green" block disabled={busy} onClick={submit}>
-          {busy ? '...' : isSignup ? 'Criar conta 🐾' : 'Entrar ▶'}
+          {busy ? '...' : isSignup ? t('auth.submitSignUp') : t('auth.submitSignIn')}
         </Button>
 
         {!isSignup && (
@@ -150,25 +152,23 @@ export function AuthScreen() {
             disabled={busy}
             onClick={forgotPassword}
           >
-            Esqueci minha senha
+            {t('auth.forgot')}
           </button>
         )}
 
         <p className="muted center" style={{ fontSize: 12, margin: 0 }}>
-          {isSignup
-            ? 'Já tem conta? Toque em "Entrar" acima.'
-            : 'Novo por aqui? Toque em "Criar conta" acima.'}
+          {isSignup ? t('auth.hintHaveAccount') : t('auth.hintNewHere')}
         </p>
         {isSignup && (
           <p className="muted center" style={{ fontSize: 11, margin: 0 }}>
-            Ao criar uma conta, você aceita nossa{' '}
+            {t('auth.privacyNoticePre')}
             <a
               href="/privacy.html"
               target="_blank"
               rel="noopener noreferrer"
               className="auth-link"
             >
-              Política de Privacidade
+              {t('auth.privacyLink')}
             </a>
             .
           </p>

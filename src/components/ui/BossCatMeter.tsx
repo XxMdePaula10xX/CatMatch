@@ -1,5 +1,6 @@
 import { useGameStore } from '../../store/gameStore';
 import { BOSS_ENERGY } from '../../game/scoring';
+import { useT } from '../../i18n';
 
 const FACE: Record<string, string> = {
   sleeping: '😴',
@@ -11,6 +12,7 @@ const FACE: Record<string, string> = {
 
 /** The Boss Cat energy meter shown above the board. */
 export function BossCatMeter() {
+  const t = useT();
   const energy = useGameStore((s) => s.bossEnergy);
   const bossState = useGameStore((s) => s.bossState);
   const pct = Math.min(100, Math.round((energy / BOSS_ENERGY.full) * 100));
@@ -23,7 +25,8 @@ export function BossCatMeter() {
       </div>
       <div className="boss__body">
         <div className="boss__label">
-          Gato Chefe {full && <span className="boss__full">• Pronto!</span>}
+          {t('boss.label')}{' '}
+          {full && <span className="boss__full">{t('boss.ready')}</span>}
         </div>
         <div className="boss__bar">
           <div className="boss__fill" style={{ width: `${pct}%` }} />

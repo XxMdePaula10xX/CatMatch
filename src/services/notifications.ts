@@ -1,4 +1,5 @@
 import { isNativeApp } from './platform';
+import { t } from '../i18n';
 
 const DAILY_ID = 1001;
 
@@ -28,7 +29,7 @@ export async function setupDailyReminder(): Promise<void> {
         {
           id: DAILY_ID,
           title: '🐱 CatMatch3',
-          body: 'Os gatinhos sentem sua falta! Jogue o desafio diário e suba no ranking.',
+          body: t('notif.dailyBody'),
           // Repeats every day at 19:00 local time.
           schedule: { on: { hour: 19, minute: 0 }, allowWhileIdle: true },
         },

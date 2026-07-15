@@ -3,9 +3,11 @@ import { useGameStore } from '../../store/gameStore';
 import { playerTag } from '../../services/leaderboard';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { useT, nf } from '../../i18n';
 
 /** Account profile: email, editable nickname, quick stats, password reset. */
 export function ProfileScreen() {
+  const t = useT();
   const goLeaderboard = useGameStore((s) => s.goLeaderboard);
   const user = useGameStore((s) => s.user);
   const nickname = useGameStore((s) => s.nickname);
@@ -28,7 +30,7 @@ export function ProfileScreen() {
 
   async function confirmDelete() {
     setDelErr(null);
-    if (!delPwd) return setDelErr('Digite sua senha para confirmar.');
+    if (!delPwd) return setDelErr(t('profile.errPassword'));
     setDeleting(true);
     const err = await deleteAccount(delPwd);
     setDeleting(false);
@@ -42,9 +44,9 @@ export function ProfileScreen() {
     // Not logged in (e.g. just signed out): offer a way back, no side effects.
     return (
       <div className="screen">
-        <p className="center muted">Você não está conectado.</p>
+        <p className="center muted">{t('profile.notConnected')}</p>
         <Button variant="green" block onClick={goLeaderboard}>
-          Voltar ao ranking
+          {t('profile.backToRanking')}
         </Button>
       </div>
     );
@@ -52,7 +54,7 @@ export function ProfileScreen() {
 
   function saveNick() {
     setNickname(name);
-    setMsg({ ok: true, text: 'Apelido salvo!' });
+    setMsg({ ok: true, text: t('profile.nickSaved') });
   }
 
   async function sendReset() {
@@ -63,21 +65,24 @@ export function ProfileScreen() {
     setMsg(
       err
         ? { ok: false, text: err }
-        : {
-            ok: true,
-            text: `E-mail enviado para ${user.email}. Cheque também a caixa de spam/lixo eletrônico.`,
-          },
+        : { ok: true, text: t('profile.resetSent', { email: user.email }) },
     );
   }
 
   return (
     <div className="screen">
       <div className="row spread">
-        <Button variant="ghost" small icon aria-label="Voltar" onClick={goLeaderboard}>
+        <Button
+          variant="ghost"
+          small
+          icon
+          aria-label={t('common.back')}
+          onClick={goLeaderboard}
+        >
           ←
         </Button>
         <h2 className="section-title" style={{ margin: 0 }}>
-          👤 Perfil
+          {t('profile.title')}
         </h2>
         <div style={{ width: 50 }} />
       </div>
@@ -93,14 +98,13 @@ export function ProfileScreen() {
               {user.email}
             </span>
             <span className="muted" style={{ fontSize: 11 }}>
-              Seu ID fixo no ranking: #{playerTag(user.uid)} (não muda quando
-              você troca o apelido)
+              {t('profile.fixedId', { tag: playerTag(user.uid) ?? '' })}
             </span>
           </div>
         </div>
 
         <label className="stat__label" htmlFor="nick">
-          Apelido no ranking
+          {t('auth.nickname')}
         </label>
         <div className="row" style={{ gap: 8 }}>
           <input
@@ -112,7 +116,7 @@ export function ProfileScreen() {
             style={{ flex: 1 }}
           />
           <Button variant="green" small onClick={saveNick}>
-            Salvar
+            {t('common.save')}
           </Button>
         </div>
       </div>
@@ -121,27 +125,25 @@ export function ProfileScreen() {
         <div className="profile-stats">
           <div className="profile-stat">
             <span className="profile-stat__num">⭐ {totalStars}</span>
-            <span className="muted">estrelas</span>
+            <span className="muted">{t('profile.stars')}</span>
           </div>
           <div className="profile-stat">
             <span className="profile-stat__num">🏅 {achievements.length}</span>
-            <span className="muted">conquistas</span>
+            <span className="muted">{t('profile.achievements')}</span>
           </div>
           <div className="profile-stat">
-            <span className="profile-stat__num">
-              🏆 {stats.bestScore.toLocaleString('pt-BR')}
-            </span>
-            <span className="muted">recorde</span>
+            <span className="profile-stat__num">🏆 {nf(stats.bestScore)}</span>
+            <span className="muted">{t('profile.record')}</span>
           </div>
         </div>
       </div>
 
       <div className="panel stack">
         <Button variant="ghost" block disabled={busy} onClick={sendReset}>
-          {busy ? 'Enviando…' : '📧 Redefinir senha'}
+          {busy ? t('profile.sending') : t('profile.resetPassword')}
         </Button>
         <Button variant="ghost" block onClick={signOut}>
-          🚪 Sair da conta
+          {t('profile.signOut')}
         </Button>
         {msg && (
           <p className={msg.ok ? 'auth-ok' : 'auth-error'}>
@@ -149,7 +151,7 @@ export function ProfileScreen() {
           </p>
         )}
         <button className="danger-link" onClick={() => setShowDelete(true)}>
-          Excluir minha conta
+          {t('profile.deleteLink')}
         </button>
       </div>
 
@@ -157,31 +159,36 @@ export function ProfileScreen() {
         <Modal>
           <button
             className="modal__close"
-            aria-label="Fechar"
+            aria-label={t('common.close')}
             onClick={() => setShowDelete(false)}
           >
             ✕
           </button>
-          <h2 className="modal__title">Excluir conta</h2>
+          <h2 className="modal__title">{t('profile.deleteTitle')}</h2>
           <p className="muted" style={{ fontSize: 13 }}>
-            Isso apaga sua conta, suas pontuações no ranking e o progresso salvo
-            na nuvem. <strong>Não dá para desfazer.</strong>
+            {t('profile.deleteWarn')}{' '}
+            <strong>{t('profile.deleteWarnBold')}</strong>
           </p>
           <p className="stat__label" style={{ textAlign: 'left' }}>
-            Confirme sua senha:
+            {t('profile.confirmPassword')}
           </p>
           <input
             className="nick-input"
             type="password"
             autoComplete="current-password"
-            placeholder="Sua senha"
+            placeholder={t('profile.passwordPlaceholder')}
             value={delPwd}
             onChange={(e) => setDelPwd(e.target.value)}
           />
           {delErr && <p className="auth-error">⚠️ {delErr}</p>}
           <div className="stack" style={{ marginTop: 10 }}>
-            <Button variant="pink" block disabled={deleting} onClick={confirmDelete}>
-              {deleting ? 'Excluindo…' : 'Excluir conta permanentemente'}
+            <Button
+              variant="pink"
+              block
+              disabled={deleting}
+              onClick={confirmDelete}
+            >
+              {deleting ? t('profile.deleting') : t('profile.deleteConfirm')}
             </Button>
             <Button
               variant="ghost"
@@ -189,7 +196,7 @@ export function ProfileScreen() {
               disabled={deleting}
               onClick={() => setShowDelete(false)}
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
           </div>
         </Modal>

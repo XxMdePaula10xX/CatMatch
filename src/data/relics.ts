@@ -1,4 +1,5 @@
 import type { CatType } from '../game/types';
+import type { LStr } from '../i18n';
 
 /** Aggregated, numeric effects applied by the relics a player has collected. */
 export interface RelicEffects {
@@ -32,81 +33,105 @@ export function emptyEffects(): RelicEffects {
 
 export interface RelicDef {
   id: string;
-  name: string;
+  name: LStr;
   icon: string;
-  description: string;
+  description: LStr;
   apply: (e: RelicEffects) => void;
 }
 
 export const RELICS: RelicDef[] = [
   {
     id: 'patasExtras',
-    name: 'Patas Extras',
+    name: { pt: 'Patas Extras', en: 'Extra Paws' },
     icon: '🐾',
-    description: '+3 movimentos em cada andar.',
+    description: {
+      pt: '+3 movimentos em cada andar.',
+      en: '+3 moves on every floor.',
+    },
     apply: (e) => {
       e.extraMoves += 3;
     },
   },
   {
     id: 'ronronarDourado',
-    name: 'Ronronar Dourado',
+    name: { pt: 'Ronronar Dourado', en: 'Golden Purr' },
     icon: '✨',
-    description: '+25% de pontos em tudo.',
+    description: {
+      pt: '+25% de pontos em tudo.',
+      en: '+25% points on everything.',
+    },
     apply: (e) => {
       e.scoreMult *= 1.25;
     },
   },
   {
     id: 'festaLaranja',
-    name: 'Festa Laranja',
+    name: { pt: 'Festa Laranja', en: 'Orange Party' },
     icon: '🐱',
-    description: 'Gatos laranja valem o dobro.',
+    description: {
+      pt: 'Gatos laranja valem o dobro.',
+      en: 'Orange cats are worth double.',
+    },
     apply: (e) => {
       e.catBonus.orange = (e.catBonus.orange ?? 0) + 1;
     },
   },
   {
     id: 'kitPatinha',
-    name: 'Kit de Patinha',
+    name: { pt: 'Kit de Patinha', en: 'Paw Kit' },
     icon: '🧰',
-    description: '+1 de cada booster por andar.',
+    description: {
+      pt: '+1 de cada booster por andar.',
+      en: '+1 of each booster per floor.',
+    },
     apply: (e) => {
       e.bonusBoosters += 1;
     },
   },
   {
     id: 'chuvaNovelos',
-    name: 'Chuva de Novelos',
+    name: { pt: 'Chuva de Novelos', en: 'Yarn Rain' },
     icon: '🧶',
-    description: '2 novelos extras a cada andar.',
+    description: {
+      pt: '2 novelos extras a cada andar.',
+      en: '2 extra yarns on every floor.',
+    },
     apply: (e) => {
       e.yarnsPerFloor += 2;
     },
   },
   {
     id: 'comboFelino',
-    name: 'Combo Felino',
+    name: { pt: 'Combo Felino', en: 'Feline Combo' },
     icon: '🔥',
-    description: 'Combos contam um nível acima.',
+    description: {
+      pt: 'Combos contam um nível acima.',
+      en: 'Combos count one tier higher.',
+    },
     apply: (e) => {
       e.comboTierBonus += 1;
     },
   },
   {
     id: 'sonecaEsperta',
-    name: 'Soneca Esperta',
+    name: { pt: 'Soneca Esperta', en: 'Clever Nap' },
     icon: '😴',
-    description: 'As 2 primeiras jogadas do andar são grátis.',
+    description: {
+      pt: 'As 2 primeiras jogadas do andar são grátis.',
+      en: 'The first 2 moves of the floor are free.',
+    },
     apply: (e) => {
       e.freeMoves += 2;
     },
   },
   {
     id: 'bigodesAfiados',
-    name: 'Bigodes Afiados',
+    name: { pt: 'Bigodes Afiados', en: 'Sharp Whiskers' },
     icon: '⚡',
-    description: '+15% de pontos e +1 movimento.',
+    description: {
+      pt: '+15% de pontos e +1 movimento.',
+      en: '+15% points and +1 move.',
+    },
     apply: (e) => {
       e.scoreMult *= 1.15;
       e.extraMoves += 1;

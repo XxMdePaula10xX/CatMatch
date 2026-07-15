@@ -1,33 +1,36 @@
 import type { Objective } from '../../game/types';
 import { CATS, CAT_IMAGE } from '../../data/cats';
-
-const nf = (n: number) => n.toLocaleString('pt-BR');
+import { useT, t, nf, tr } from '../../i18n';
 
 function describe(o: Objective): { icon: string; title: string; img?: string } {
   switch (o.type) {
     case 'score':
-      return { icon: '🏆', title: `Faça ${nf(o.target)} pontos` };
+      return { icon: '🏆', title: t('obj.score', { n: nf(o.target) }) };
     case 'collectCat': {
       const cat = o.catType ? CATS[o.catType] : null;
       return {
         icon: cat?.emoji ?? '🐱',
         img: o.catType ? CAT_IMAGE[o.catType] : undefined,
-        title: `Colete ${o.target}x ${cat?.name ?? 'gatos'}`,
+        title: t('obj.collect', {
+          n: o.target,
+          cat: cat ? tr(cat.name) : t('obj.collectFallback'),
+        }),
       };
     }
     case 'breakBox':
-      return { icon: '📦', title: `Quebre ${o.target} caixas` };
+      return { icon: '📦', title: t('obj.breakBox', { n: o.target }) };
     case 'activateYarn':
-      return { icon: '🧶', title: `Ative ${o.target} novelos` };
+      return { icon: '🧶', title: t('obj.yarn', { n: o.target }) };
     case 'chargeBoss':
-      return { icon: '👑', title: `Carregue o Gato Chefe ${o.target}x` };
+      return { icon: '👑', title: t('obj.boss', { n: o.target }) };
     default:
-      return { icon: '⭐', title: 'Objetivo' };
+      return { icon: '⭐', title: t('obj.default') };
   }
 }
 
 /** A single level objective with a progress bar. */
 export function ObjectiveCard({ objective }: { objective: Objective }) {
+  useT();
   const { icon, title, img } = describe(objective);
   const current = Math.min(objective.current ?? 0, objective.target);
   const done = current >= objective.target;

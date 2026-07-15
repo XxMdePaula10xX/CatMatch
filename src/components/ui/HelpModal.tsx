@@ -4,6 +4,7 @@ import { OBSTACLES, OBSTACLE_IMAGE } from '../../data/obstacles';
 import { CatTile } from '../board/CatTile';
 import { Button } from './Button';
 import type { SpecialCatType, ObstacleType } from '../../game/types';
+import { useT, tr } from '../../i18n';
 
 const SPECIAL_ORDER: SpecialCatType[] = [
   'ninjaH',
@@ -34,15 +35,16 @@ interface HelpModalProps {
 
 /** Explains every cat personality power, special cat, and obstacle. */
 export function HelpModal({ onClose }: HelpModalProps) {
+  const t = useT();
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal modal--guide"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="modal__title">Gatinhos & Poderes</h2>
+        <h2 className="modal__title">{t('help.title')}</h2>
         <div className="guide">
-          <h3 className="section-title">🐾 Gatos Básicos</h3>
+          <h3 className="section-title">{t('help.basicCats')}</h3>
           {CAT_TYPES.map((c) => (
             <div className="guide__row" key={c}>
               <div className="guide__icon">
@@ -50,49 +52,51 @@ export function HelpModal({ onClose }: HelpModalProps) {
               </div>
               <div className="guide__text">
                 <strong>
-                  {CATS[c].name} · {CATS[c].personality}
+                  {tr(CATS[c].name)} · {tr(CATS[c].personality)}
                 </strong>
-                <span>{CATS[c].power}</span>
+                <span>{tr(CATS[c].power)}</span>
               </div>
             </div>
           ))}
 
-          <h3 className="section-title">⭐ Gatos Especiais</h3>
+          <h3 className="section-title">{t('help.specialCats')}</h3>
           {SPECIAL_ORDER.map((s) => (
             <div className="guide__row" key={s}>
               <div className="guide__icon">
                 <CatTile catType="black" specialType={s} />
               </div>
               <div className="guide__text">
-                <strong>{SPECIAL_CATS[s].name}</strong>
-                <span>{SPECIAL_CATS[s].description}</span>
-                <em className="muted">Como criar: {SPECIAL_CREATE[s]}</em>
+                <strong>{tr(SPECIAL_CATS[s].name)}</strong>
+                <span>{tr(SPECIAL_CATS[s].description)}</span>
+                <em className="muted">
+                  {t('help.howToCreate', { how: tr(SPECIAL_CREATE[s]) })}
+                </em>
               </div>
             </div>
           ))}
 
-          <h3 className="section-title">📦 Obstáculos</h3>
+          <h3 className="section-title">{t('help.obstacles')}</h3>
           {Object.values(OBSTACLES).map((o) => (
             <div className="guide__row" key={o.id}>
               <div className="guide__icon guide__icon--plain">
                 <ObstacleGuideIcon type={o.id} />
               </div>
               <div className="guide__text">
-                <strong>{o.name}</strong>
-                <span>{o.description}</span>
+                <strong>{tr(o.name)}</strong>
+                <span>{tr(o.description)}</span>
               </div>
             </div>
           ))}
 
-          <h3 className="section-title">👑 Gato Chefe</h3>
+          <h3 className="section-title">{t('help.bossTitle')}</h3>
           <p className="muted" style={{ margin: 0 }}>
-            Combos enchem a barra do Chefe. Cheia, ele faz a{' '}
-            <strong>Espreguiçada Real</strong>: remove todos os gatos do tipo
-            mais comum do tabuleiro!
+            {t('help.bossBodyPre')}
+            <strong>{t('help.bossMove')}</strong>
+            {t('help.bossBodyPost')}
           </p>
         </div>
         <Button variant="green" block onClick={onClose}>
-          Entendi! 🐱
+          {t('help.gotIt')}
         </Button>
       </div>
     </div>

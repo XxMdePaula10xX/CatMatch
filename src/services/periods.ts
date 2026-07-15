@@ -1,4 +1,5 @@
 /** Date-based identifiers for daily and weekly leaderboards / seasons. */
+import { t } from '../i18n';
 
 /** Local calendar day, e.g. "2026-06-20". */
 export function getDayId(d: Date = new Date()): string {
@@ -31,5 +32,5 @@ export function getWeekId(d: Date = new Date()): string {
 /** Friendly label for the current week (used on the leaderboard header). */
 export function weekLabel(weekId: string = getWeekId()): string {
   const [, w] = weekId.split('-W');
-  return `Semana ${w}`;
+  return t('period.week', { n: w });
 }

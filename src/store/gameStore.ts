@@ -82,6 +82,7 @@ import {
   ACHIEVEMENTS,
 } from '../data/achievements';
 import { getDayId } from '../services/periods';
+import { t, tr } from '../i18n';
 
 const T = { swap: 180, pop: 240, fall: 240, boss: 600 };
 const BOOSTER_START = 3;
@@ -291,7 +292,7 @@ export const useGameStore = create<GameState>((set, get) => {
       set({ achievements: updated });
       for (const id of newly) {
         const def = ACHIEVEMENTS.find((a) => a.id === id);
-        if (def) addToast(`🏅 Conquista: ${def.name}`);
+        if (def) addToast(t('toast.achievement', { name: tr(def.name) }));
       }
     }
   }
@@ -340,7 +341,7 @@ export const useGameStore = create<GameState>((set, get) => {
   async function runBossPower(board: Board, progress: ObjectiveProgress) {
     set({ bossState: 'waking' });
     soundManager.play('boss');
-    addToast('👑 Gato Chefe: Espreguiçada Real!');
+    addToast(t('toast.bossRoyalStretch'));
     triggerShake(4);
     await delay(T.boss);
 
@@ -425,11 +426,11 @@ export const useGameStore = create<GameState>((set, get) => {
       );
       if (step.yarnsActivated > 0) {
         soundManager.play('yarn');
-        addToast('🧶 Novelo rolando!');
+        addToast(t('toast.yarnRolling'));
       }
       for (const c of step.creations) {
         const def = SPECIAL_CATS[c.special];
-        addToast(`${def.emoji} ${def.name}: ${def.description}`);
+        addToast(`${def.emoji} ${tr(def.name)}: ${tr(def.description)}`);
       }
 
       progress.score += step.scoreGained;
@@ -638,7 +639,7 @@ export const useGameStore = create<GameState>((set, get) => {
     const m = get().mode;
     if (m === 'adventure' && get().advFreeLeft > 0) {
       set({ advFreeLeft: get().advFreeLeft - 1 });
-      addToast('🆓 Jogada grátis!');
+      addToast(t('toast.freeMove'));
     } else if (m !== 'blitz') {
       set({ movesLeft: get().movesLeft - 1 });
     }
@@ -760,7 +761,7 @@ export const useGameStore = create<GameState>((set, get) => {
       storage.clearSavedGame();
       set({ savedGameExists: false });
     }
-    if (ddaBonus > 0) addToast(`🐾 +${ddaBonus} movimentos extras!`);
+    if (ddaBonus > 0) addToast(t('toast.extraMoves', { n: ddaBonus }));
   }
 
   // ---- Adventure (roguelite) ----
@@ -800,7 +801,9 @@ export const useGameStore = create<GameState>((set, get) => {
       },
       advFreeLeft: mods.freeMoves,
     });
-    addToast(`🗺️ Andar ${depth} — meta ${level.objectives[0].target} pts`);
+    addToast(
+      t('toast.floorGoal', { n: depth, target: level.objectives[0].target }),
+    );
   }
 
   function endAdventureRun() {
@@ -1289,7 +1292,7 @@ export const useGameStore = create<GameState>((set, get) => {
     },
     deleteAccount: async (password: string) => {
       const user = get().user;
-      if (!user) return 'Você não está conectado.';
+      if (!user) return t('toast.notConnected');
       try {
         // Verify identity (Firebase requires a recent login to delete), then
         // remove the user's cloud data while still authenticated, and finally
@@ -1304,7 +1307,7 @@ export const useGameStore = create<GameState>((set, get) => {
         try {
           await deleteCurrentUser();
         } catch (e) {
-          return `Seus dados foram removidos, mas não foi possível excluir a conta agora. Tente de novo. (${authErrorMessage(e)})`;
+          return t('toast.deletePartial', { err: authErrorMessage(e) });
         }
         set({ user: null, screen: 'home' });
         return null;
