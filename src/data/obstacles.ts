@@ -49,3 +49,14 @@ export const OBSTACLES: Record<ObstacleType, ObstacleDef> = {
     description: 'Quebra com combinações ao lado dela.',
   },
 };
+
+/**
+ * Custom SVG art for each obstacle (in `public/obstacles/`). Rendered as the
+ * tile visual, falling back to the emoji above if the image ever fails to load.
+ */
+export const OBSTACLE_IMAGE: Record<ObstacleType, string> = {
+  box: '/obstacles/box.svg',
+  scratcher: '/obstacles/scratcher.svg',
+  bed: '/obstacles/bed.svg',
+  spine: '/obstacles/spine.svg',
+};

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Cozy cat bed with a paw print, fixed obstacle -->
+  <defs>
+    <linearGradient id="bedRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8FB6E0"/>
+      <stop offset="1" stop-color="#5E8BC4"/>
+    </linearGradient>
+    <radialGradient id="bedInner" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#FBEAD2"/>
+      <stop offset="1" stop-color="#E9CFA6"/>
+    </radialGradient>
+  </defs>
+  <!-- outer rim -->
+  <ellipse cx="32" cy="40" rx="26" ry="18" fill="url(#bedRim)" stroke="#42679C" stroke-width="2.5"/>
+  <!-- inner cushion -->
+  <ellipse cx="32" cy="40" rx="17" ry="11" fill="url(#bedInner)" stroke="#C9A876" stroke-width="1.5"/>
+  <!-- paw print -->
+  <g fill="#C58AA8">
+    <ellipse cx="32" cy="42" rx="6" ry="5"/>
+    <circle cx="25" cy="37" r="2.4"/>
+    <circle cx="30" cy="34" r="2.4"/>
+    <circle cx="34" cy="34" r="2.4"/>
+    <circle cx="39" cy="37" r="2.4"/>
+  </g>
+  <!-- rim highlight -->
+  <path d="M14 34 Q20 27 32 26" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+</svg>

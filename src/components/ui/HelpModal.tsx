@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { CATS, CAT_TYPES, SPECIAL_CATS, SPECIAL_CREATE } from '../../data/cats';
-import { OBSTACLES } from '../../data/obstacles';
+import { OBSTACLES, OBSTACLE_IMAGE } from '../../data/obstacles';
 import { CatTile } from '../board/CatTile';
 import { Button } from './Button';
-import type { SpecialCatType } from '../../game/types';
+import type { SpecialCatType, ObstacleType } from '../../game/types';
 
 const SPECIAL_ORDER: SpecialCatType[] = [
   'ninjaH',
@@ -11,6 +12,21 @@ const SPECIAL_ORDER: SpecialCatType[] = [
   'angry',
   'lucky',
 ];
+
+/** Obstacle art with an emoji fallback, for the guide list. */
+function ObstacleGuideIcon({ type }: { type: ObstacleType }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <>{OBSTACLES[type].emoji}</>;
+  return (
+    <img
+      className="guide__img"
+      src={OBSTACLE_IMAGE[type]}
+      alt=""
+      draggable={false}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 interface HelpModalProps {
   onClose: () => void;
@@ -58,7 +74,9 @@ export function HelpModal({ onClose }: HelpModalProps) {
           <h3 className="section-title">📦 Obstáculos</h3>
           {Object.values(OBSTACLES).map((o) => (
             <div className="guide__row" key={o.id}>
-              <div className="guide__icon guide__icon--plain">{o.emoji}</div>
+              <div className="guide__icon guide__icon--plain">
+                <ObstacleGuideIcon type={o.id} />
+              </div>
               <div className="guide__text">
                 <strong>{o.name}</strong>
                 <span>{o.description}</span>

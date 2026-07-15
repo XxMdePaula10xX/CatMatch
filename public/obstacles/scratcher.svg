@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Cat scratching post: rope-wrapped column on a base -->
+  <defs>
+    <linearGradient id="rope" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D9B27A"/>
+      <stop offset="0.5" stop-color="#EBCF9C"/>
+      <stop offset="1" stop-color="#C79A5E"/>
+    </linearGradient>
+  </defs>
+  <!-- base -->
+  <ellipse cx="32" cy="52" rx="18" ry="6" fill="#B98C57"/>
+  <rect x="16" y="46" width="32" height="8" rx="4" fill="#CFA36A" stroke="#9C7238" stroke-width="2"/>
+  <!-- post -->
+  <rect x="24" y="12" width="16" height="36" rx="7" fill="url(#rope)" stroke="#9C7238" stroke-width="2.5"/>
+  <!-- rope wraps -->
+  <g stroke="#A87C44" stroke-width="2" stroke-linecap="round" opacity="0.7">
+    <line x1="25" y1="18" x2="39" y2="20"/>
+    <line x1="25" y1="24" x2="39" y2="26"/>
+    <line x1="25" y1="30" x2="39" y2="32"/>
+    <line x1="25" y1="36" x2="39" y2="38"/>
+    <line x1="25" y1="42" x2="39" y2="44"/>
+  </g>
+  <!-- little top ball -->
+  <circle cx="32" cy="12" r="7" fill="#F4A6C0" stroke="#D9749A" stroke-width="2"/>
+  <circle cx="30" cy="10" r="2" fill="#fff" opacity="0.7"/>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Bone barrier: a cute chunky dog/cat bone -->
+  <defs>
+    <linearGradient id="bone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFDF6"/>
+      <stop offset="1" stop-color="#E7DCC4"/>
+    </linearGradient>
+  </defs>
+  <g transform="rotate(-35 32 32)" stroke="#C7B78E" stroke-width="2.5" stroke-linejoin="round">
+    <!-- shaft -->
+    <rect x="20" y="27" width="24" height="10" rx="5" fill="url(#bone)"/>
+    <!-- left knobs -->
+    <circle cx="19" cy="26" r="7" fill="url(#bone)"/>
+    <circle cx="19" cy="38" r="7" fill="url(#bone)"/>
+    <!-- right knobs -->
+    <circle cx="45" cy="26" r="7" fill="url(#bone)"/>
+    <circle cx="45" cy="38" r="7" fill="url(#bone)"/>
+  </g>
+  <!-- highlight -->
+  <ellipse cx="26" cy="24" rx="4" ry="2.5" fill="#fff" opacity="0.7" transform="rotate(-35 32 32)"/>
+</svg>

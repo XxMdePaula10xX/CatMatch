@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Laser whiskers: a cat face with glowing beams from the whiskers -->
+  <defs>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF5FA2" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#FF2E7E"/>
+    </linearGradient>
+  </defs>
+  <!-- beams -->
+  <rect x="2" y="30" width="60" height="4" rx="2" fill="url(#beam)"/>
+  <rect x="2" y="30" width="60" height="4" rx="2" fill="url(#beam)" transform="scale(-1,1) translate(-64,0)"/>
+  <!-- head -->
+  <circle cx="32" cy="32" r="17" fill="#FFB36B" stroke="#E68A38" stroke-width="2.5"/>
+  <!-- ears -->
+  <path d="M18 20 L20 8 L28 16 Z" fill="#FFB36B" stroke="#E68A38" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M46 20 L44 8 L36 16 Z" fill="#FFB36B" stroke="#E68A38" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- glowing eyes -->
+  <circle cx="26" cy="31" r="3.5" fill="#FF2E7E"/>
+  <circle cx="38" cy="31" r="3.5" fill="#FF2E7E"/>
+  <circle cx="25" cy="30" r="1.2" fill="#fff"/>
+  <circle cx="37" cy="30" r="1.2" fill="#fff"/>
+  <!-- nose -->
+  <path d="M30 37 L34 37 L32 40 Z" fill="#D9749A"/>
+  <!-- sparkle -->
+  <path d="M50 12 L51 16 L55 17 L51 18 L50 22 L49 18 L45 17 L49 16 Z" fill="#FFE28A"/>
+</svg>

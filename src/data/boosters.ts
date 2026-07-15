@@ -47,3 +47,14 @@ export const BOOSTER_ORDER: BoosterId[] = [
   'laser',
   'giantPaw',
 ];
+
+/**
+ * Custom SVG art for each booster (in `public/boosters/`). Rendered on the tray
+ * button, falling back to the emoji above if the image ever fails to load.
+ */
+export const BOOSTER_IMAGE: Record<BoosterId, string> = {
+  pawBomb: '/boosters/pawBomb.svg',
+  rainbowYarn: '/boosters/rainbowYarn.svg',
+  laser: '/boosters/laser.svg',
+  giantPaw: '/boosters/giantPaw.svg',
+};
