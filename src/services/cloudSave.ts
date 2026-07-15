@@ -12,17 +12,27 @@ export interface CloudData {
   achievements: string[];
 }
 
-/** Loads a user's cloud save, or null when not available / not found. */
+/** Rejects after `ms` so a hung read can't stall login forever. */
+function withTimeout<T>(p: Promise<T>, ms = 10000): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms),
+    ),
+  ]);
+}
+
+/**
+ * Loads a user's cloud save. Returns null ONLY when no save exists; THROWS on a
+ * read error/timeout so the caller can avoid clobbering cloud data with local
+ * on a transient failure.
+ */
 export async function loadCloudSave(uid: string): Promise<CloudData | null> {
   if (!firebaseEnabled) return null;
   const db = getDb();
   if (!db) return null;
-  try {
-    const snap = await getDoc(doc(db, COLLECTION, uid));
-    return snap.exists() ? (snap.data() as CloudData) : null;
-  } catch {
-    return null;
-  }
+  const snap = await withTimeout(getDoc(doc(db, COLLECTION, uid)));
+  return snap.exists() ? (snap.data() as CloudData) : null;
 }
 
 /** Writes the user's cloud save (best-effort, never throws). */

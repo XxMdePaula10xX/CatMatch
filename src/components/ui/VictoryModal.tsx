@@ -33,7 +33,7 @@ export function VictoryModal() {
       <span className="modal__cat" aria-hidden>
         😸
       </span>
-      <h2 className="modal__title">Nível Concluído!</h2>
+      <h2 className="modal__title">Fase Concluída!</h2>
       <Stars count={stars} />
 
       <div className="score-breakdown">

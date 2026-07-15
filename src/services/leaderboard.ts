@@ -466,7 +466,9 @@ export async function getMyScore(
       }
     }
   }
-  const mine = readLocal().find(
+  // Read the player's OWN guest scores, never the seeded/demo local board
+  // (which would pin a bot's score as "your position").
+  const mine = readList(MY_GUEST_KEY).find(
     (e) => e.board === params.board && e.periodId === periodId,
   );
   return mine?.score ?? 0;

@@ -37,15 +37,15 @@ export const OBSTACLES: Record<ObstacleType, ObstacleDef> = {
     hp: 99,
     removable: false,
     blocksFall: true,
-    description: 'Obstáculo fixo (não removível no MVP).',
+    description: 'Obstáculo fixo que não pode ser removido.',
   },
   spine: {
     id: 'spine',
-    name: 'Bloqueador de Espinha',
+    name: 'Barreira de Osso',
     emoji: '🦴',
     hp: 1,
     removable: true,
     blocksFall: true,
-    description: 'Peça presa quebrada por combinações próximas.',
+    description: 'Quebra com combinações ao lado dela.',
   },
 };

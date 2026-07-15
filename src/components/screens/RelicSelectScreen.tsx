@@ -1,5 +1,6 @@
 import { useGameStore } from '../../store/gameStore';
 import { getRelic } from '../../data/relics';
+import { Button } from '../ui/Button';
 
 /** Shown between Adventure floors: pick one of three relics to power up. */
 export function RelicSelectScreen() {
@@ -8,6 +9,7 @@ export function RelicSelectScreen() {
   const relicChoices = useGameStore((s) => s.relicChoices);
   const ownedIds = useGameStore((s) => s.advRelics);
   const chooseRelic = useGameStore((s) => s.chooseRelic);
+  const goHome = useGameStore((s) => s.goHome);
 
   // Count how many of each relic the player owns (relics stack).
   const counts = new Map<string, number>();
@@ -66,6 +68,12 @@ export function RelicSelectScreen() {
             </button>
           );
         })}
+      </div>
+
+      <div className="row" style={{ marginTop: 4, justifyContent: 'center' }}>
+        <Button variant="ghost" small onClick={goHome}>
+          ← Encerrar aventura
+        </Button>
       </div>
 
       {ownedUnique.length > 0 && (

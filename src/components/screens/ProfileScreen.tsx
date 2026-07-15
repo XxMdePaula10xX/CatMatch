@@ -73,7 +73,7 @@ export function ProfileScreen() {
   return (
     <div className="screen">
       <div className="row spread">
-        <Button variant="ghost" small icon onClick={goLeaderboard}>
+        <Button variant="ghost" small icon aria-label="Voltar" onClick={goLeaderboard}>
           ←
         </Button>
         <h2 className="section-title" style={{ margin: 0 }}>

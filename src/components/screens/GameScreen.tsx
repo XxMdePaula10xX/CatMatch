@@ -83,7 +83,13 @@ export function GameScreen() {
         <Button variant="ghost" small onClick={goHome}>
           ← Início
         </Button>
-        <Button variant="ghost" small icon onClick={() => setShowHelp(true)}>
+        <Button
+          variant="ghost"
+          small
+          icon
+          aria-label="Ajuda"
+          onClick={() => setShowHelp(true)}
+        >
           ❓
         </Button>
         <Button variant="ghost" small onClick={restartLevel}>

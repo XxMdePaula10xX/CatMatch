@@ -13,10 +13,13 @@ interface CatTileProps {
  */
 export function CatTile({ catType, specialType }: CatTileProps) {
   const def = CATS[catType];
-  const [imgFailed, setImgFailed] = useState(false);
+  // Track WHICH url failed (not a permanent latch), so a re-render or an
+  // in-place cat transform retries the image instead of sticking on the emoji.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   const src = specialType ? SPECIAL_IMAGE[specialType] : CAT_IMAGE[catType];
   const emoji = specialType ? SPECIAL_CATS[specialType].emoji : def.emoji;
+  const imgFailed = failedSrc === src;
 
   const background = `radial-gradient(circle at 35% 28%, ${lighten(
     def.color,
@@ -32,7 +35,7 @@ export function CatTile({ catType, specialType }: CatTileProps) {
           src={src}
           alt=""
           draggable={false}
-          onError={() => setImgFailed(true)}
+          onError={() => setFailedSrc(src)}
         />
       )}
       {specialType && (

@@ -24,30 +24,39 @@ export default function App() {
     setupDailyReminder();
     clearBadge();
     let cancelled = false;
-    let remove: (() => void) | undefined;
+    const removers: Array<() => void> = [];
+    const track = (handle: { remove: () => void }) => {
+      if (cancelled) void handle.remove();
+      else removers.push(() => void handle.remove());
+    };
     import('@capacitor/app')
-      .then(({ App }) =>
-        App.addListener('appStateChange', ({ isActive }) => {
-          if (isActive) {
-            // Belt-and-suspenders: clear the badge whenever we return.
-            clearBadge();
-            flushPendingScores();
-          } else {
-            // App is being backgrounded (may be killed) — don't lose the run.
-            useGameStore.getState().saveRunOnExit();
-          }
-        }),
-      )
-      .then((handle) => {
-        // If cleanup already ran before the import resolved, remove immediately
-        // so we never leak a listener (StrictMode / remount).
-        if (cancelled) void handle.remove();
-        else remove = () => void handle.remove();
+      .then(async ({ App }) => {
+        track(
+          await App.addListener('appStateChange', ({ isActive }) => {
+            if (isActive) {
+              // Belt-and-suspenders: clear the badge whenever we return.
+              clearBadge();
+              flushPendingScores();
+            } else {
+              // App is being backgrounded (may be killed) — don't lose the run.
+              useGameStore.getState().saveRunOnExit();
+            }
+          }),
+        );
+        // Android hardware Back: navigate within the app instead of quitting.
+        track(
+          await App.addListener('backButton', () => {
+            const s = useGameStore.getState();
+            if (s.screen === 'home') void App.exitApp();
+            else if (s.screen === 'game') s.goLevelSelect();
+            else s.goHome();
+          }),
+        );
       })
       .catch(() => {});
     return () => {
       cancelled = true;
-      remove?.();
+      removers.forEach((r) => r());
     };
   }, []);
 

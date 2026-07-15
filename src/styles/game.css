@@ -66,6 +66,18 @@
 }
 .objective__icon {
   font-size: 26px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.objective__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
 }
 .objective__text {
   flex: 1;
@@ -509,6 +521,9 @@
   position: relative;
   width: 100%;
   max-width: 360px;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--panel);
   border: 4px solid var(--border);
   border-radius: var(--radius-lg);
@@ -1282,5 +1297,20 @@
   100% {
     transform: translateY(420px) rotate(540deg);
     opacity: 0;
+  }
+}
+
+/* ---------- Accessibility: respect reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .board-wrap.shake {
+    animation: none !important;
   }
 }

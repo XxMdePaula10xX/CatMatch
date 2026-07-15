@@ -77,6 +77,7 @@ import {
 } from '../services/cloudSave';
 import {
   type Stats,
+  createStats,
   unlockedIds,
   ACHIEVEMENTS,
 } from '../data/achievements';
@@ -671,11 +672,16 @@ export const useGameStore = create<GameState>((set, get) => {
       for (let c = 0; c < cols; c++) targets.push({ row: pos.row, col: c });
     }
 
-    applyObstacleDamage(board, targets);
+    // Credit boxes the booster destroys (else breakBox levels can soft-lock).
+    const obs = applyObstacleDamage(board, targets);
     addParticles(targets);
+    const collected: Partial<Record<CatType, number>> = {};
     for (const p of targets) {
       const t = board[p.row][p.col];
-      if (t.type === 'cat' || t.type === 'specialCat') t.isMatched = true;
+      if (t.type === 'cat' || t.type === 'specialCat') {
+        t.isMatched = true;
+        if (t.catType) collected[t.catType] = (collected[t.catType] ?? 0) + 1;
+      }
     }
     await commit(board, T.pop);
     for (const p of targets) {
@@ -685,8 +691,13 @@ export const useGameStore = create<GameState>((set, get) => {
     }
     const level = get().level!;
     const progress = get().progress;
-    progress.score += targets.length * 20;
-    set({ score: progress.score });
+    progress.score += targets.length * 20 + obs.obstaclesDestroyed * SCORE.obstacleDestroyed;
+    progress.boxesBroken += obs.boxesBroken;
+    mergeCollected(progress, collected); // count cleared cats toward collectCat
+    updateStats((st) => {
+      st.boxesBroken += obs.boxesBroken;
+    });
+    set({ score: progress.score, objectives: recomputeObjectives(level, progress) });
     await commit(board, T.pop);
 
     applyGravity(board);
@@ -923,7 +934,15 @@ export const useGameStore = create<GameState>((set, get) => {
       // scores that failed to upload earlier (hung connection).
       void migrateGuestScores(user.uid).then(() => flushPendingScores());
 
-      const cloud = await loadCloudSave(user.uid);
+      let cloud: CloudData | null;
+      try {
+        cloud = await loadCloudSave(user.uid);
+      } catch {
+        // Transient read failure: do NOT reconcile — leaving cloudReady false
+        // keeps local progress intact and blocks pushes that would overwrite
+        // the (unread) cloud save with local data.
+        return;
+      }
       // Re-read state AFTER the await so progress earned during the load isn't
       // lost when we merge.
       const s = get();
@@ -1226,12 +1245,14 @@ export const useGameStore = create<GameState>((set, get) => {
     },
     signUpEmail: async (email: string, password: string, nickname: string) => {
       const nick = nickname.trim().slice(0, 18);
+      // Persist the nickname BEFORE the network call so it survives a
+      // post-timeout success (onAuthChange would otherwise fill it from email).
+      if (nick) {
+        storage.saveNickname(nick);
+        set({ nickname: nick });
+      }
       try {
         await signUpWithEmail(email.trim(), password, nick || undefined);
-        if (nick) {
-          storage.saveNickname(nick);
-          set({ nickname: nick });
-        }
         return null;
       } catch (e) {
         return authErrorMessage(e);
@@ -1240,7 +1261,23 @@ export const useGameStore = create<GameState>((set, get) => {
     signOut: async () => {
       soundManager.play('button');
       await signOutUser();
-      set({ user: null, screen: 'leaderboard' });
+      // Reset progress to the local baseline so a DIFFERENT account logging in
+      // next on a shared device can't adopt this account's progress. Re-logging
+      // into the same account restores it via the cloud merge.
+      const fresh = createStats();
+      storage.saveMeta({ unlockedLevel: 1, stars: {} });
+      storage.saveHighScores({});
+      storage.saveStats(fresh);
+      storage.saveAchievements([]);
+      set({
+        user: null,
+        screen: 'leaderboard',
+        unlockedLevel: 1,
+        starsByLevel: {},
+        highScores: {},
+        stats: fresh,
+        achievements: [],
+      });
     },
     resetPassword: async (email: string) => {
       try {
@@ -1258,9 +1295,17 @@ export const useGameStore = create<GameState>((set, get) => {
         // remove the user's cloud data while still authenticated, and finally
         // delete the account itself.
         await reauthenticate(password);
+        // Remove cloud data while still authenticated (best-effort).
         await deleteUserScores(user.uid);
         await deleteCloudSave(user.uid);
-        await deleteCurrentUser();
+        // Deleting the account is the point of no return. If it fails after the
+        // data was already removed, tell the user precisely (don't imply the
+        // profile is untouched) so they retry rather than assume it failed.
+        try {
+          await deleteCurrentUser();
+        } catch (e) {
+          return `Seus dados foram removidos, mas não foi possível excluir a conta agora. Tente de novo. (${authErrorMessage(e)})`;
+        }
         set({ user: null, screen: 'home' });
         return null;
       } catch (e) {

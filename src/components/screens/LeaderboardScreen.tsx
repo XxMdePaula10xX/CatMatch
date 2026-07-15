@@ -84,7 +84,7 @@ export function LeaderboardScreen() {
   return (
     <div className="screen">
       <div className="row spread">
-        <Button variant="ghost" small icon onClick={goHome}>
+        <Button variant="ghost" small icon aria-label="Voltar" onClick={goHome}>
           ←
         </Button>
         <h2 className="section-title" style={{ margin: 0 }}>

@@ -9,7 +9,13 @@ interface ModalProps {
 export function Modal({ variant = 'plain', children }: ModalProps) {
   return (
     <div className="modal-overlay">
-      <div className={`modal modal--${variant}`}>{children}</div>
+      <div
+        className={`modal modal--${variant}`}
+        role="dialog"
+        aria-modal="true"
+      >
+        {children}
+      </div>
     </div>
   );
 }
