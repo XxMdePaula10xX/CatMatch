@@ -31,8 +31,9 @@ export const CATS: Record<CatType, CatDef> = {
     id: 'gray',
     name: { pt: 'Gato Cinza', en: 'Gray Cat' },
     personality: { pt: 'Esperto', en: 'Clever' },
-    color: '#B9C4D0',
-    colorDark: '#8C9AAE',
+    // Deeper blue-gray so the tile reads clearly apart from the pale white cat.
+    color: '#9BAABC',
+    colorDark: '#71829A',
     emoji: '😺',
     power: { pt: 'Revela uma dica de jogada', en: 'Reveals a move hint' },
   },
