@@ -230,8 +230,11 @@
   justify-content: center;
   padding: 3px;
   /* Animate the position transform (compositor-friendly) for smooth falls.
-     No persistent will-change: keeping 64 layers alive all session costs more
-     memory than it saves; the transition still composites during animation. */
+     Keep will-change: on iOS WebKit, transform-positioned tiles WITHOUT their
+     own compositing layer hit-test at the wrong row, so taps land one cell off.
+     Promoting each tile fixes that (and taps are also resolved by coordinates
+     in GameBoard as a belt-and-suspenders). */
+  will-change: transform;
   transition: transform 0.22s cubic-bezier(0.5, 0, 0.5, 1);
   z-index: 2;
 }
