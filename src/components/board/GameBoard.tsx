@@ -105,14 +105,23 @@ export function GameBoard() {
     return el ? el.clientWidth / cols : 40;
   }
 
-  function tileAt(target: EventTarget | null): Position | null {
-    const el = (target as HTMLElement)?.closest?.('[data-row]') as HTMLElement | null;
+  // Map a screen point to a grid cell using the board's own (untransformed)
+  // rect. This is immune to an iOS/WebKit quirk where hit-testing against the
+  // GPU-composited, `transform`-positioned tiles could return a neighbouring
+  // row — the cell you tap now always matches the cell you see.
+  function cellFromPoint(clientX: number, clientY: number): Position | null {
+    const el = boardRef.current;
     if (!el) return null;
-    return { row: Number(el.dataset.row), col: Number(el.dataset.col) };
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const col = Math.floor(((clientX - rect.left) / rect.width) * cols);
+    const row = Math.floor(((clientY - rect.top) / rect.height) * rows);
+    if (row < 0 || row >= rows || col < 0 || col >= cols) return null;
+    return { row, col };
   }
 
   function handlePointerDown(e: React.PointerEvent) {
-    const pos = tileAt(e.target);
+    const pos = cellFromPoint(e.clientX, e.clientY);
     if (!pos) return;
     drag.current = { ...pos, x: e.clientX, y: e.clientY, triggered: false };
   }
