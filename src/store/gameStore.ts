@@ -806,6 +806,31 @@ export const useGameStore = create<GameState>((set, get) => {
     );
   }
 
+  /**
+   * Durably saves AND submits the cumulative Adventure total. Idempotent — the
+   * leaderboard keeps the HIGHEST per (user, board, period) and submitScore
+   * queues to localStorage before the network write — so it's safe to call as a
+   * per-floor checkpoint as well as on run end / quit. This is what guarantees a
+   * long run is never lost if the app is backgrounded or killed mid-run.
+   */
+  function persistAdventureScore(total: number, depth: number) {
+    if (total <= 0) return;
+    storage.saveHighScore(ADVENTURE_LEVEL_ID, total);
+    updateStats((st) => {
+      st.bestScore = Math.max(st.bestScore, total);
+      st.advBestDepth = Math.max(st.advBestDepth, depth);
+    });
+    const s = get();
+    void submitScore({
+      uid: s.user?.uid,
+      name: s.nickname || s.user?.name || 'Jogador',
+      score: total,
+      board: 'adventure',
+      scope: 'weekly',
+    });
+    cloudPush();
+  }
+
   function endAdventureRun() {
     const s = get();
     const total = s.advTotalScore + s.progress.score;
@@ -874,10 +899,11 @@ export const useGameStore = create<GameState>((set, get) => {
 
     if (won) {
       const total = state.advTotalScore + progress.score;
-      updateStats((st) => {
-        st.bestScore = Math.max(st.bestScore, progress.score);
-      });
       soundManager.play('victory');
+      // AUTOSAVE CHECKPOINT: durably save + submit the cumulative run total after
+      // EVERY floor. If the app is backgrounded or killed before the run ends,
+      // the score up to the last cleared floor is already banked in the ranking.
+      persistAdventureScore(total, state.advDepth);
       // Bank the floor score into advTotalScore and RESET the live progress, so
       // a background-triggered submitRunInProgress() (on the relic screen) can't
       // add this floor's score twice.
